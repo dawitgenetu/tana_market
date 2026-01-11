@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ShoppingBag, Facebook, Twitter, Instagram, Mail } from 'lucide-react'
+import { Facebook, Twitter, Instagram, Mail } from 'lucide-react'
 
 const Footer = () => {
   return (
@@ -9,10 +9,12 @@ const Footer = () => {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="flex items-center space-x-2 mb-4">
-              <div className="p-2 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-lg">
-                <ShoppingBag className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">Tana Market</span>
+              <img 
+                src="/logo.png" 
+                alt="Tana Market Logo" 
+                className="h-12 w-auto object-contain"
+                style={{ maxHeight: '48px' }}
+              />
             </Link>
             <p className="text-gray-400 mb-4 max-w-md">
               Your trusted e-commerce platform for quality products. Shop with confidence and enjoy fast, secure delivery.

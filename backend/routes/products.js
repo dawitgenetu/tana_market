@@ -75,19 +75,29 @@ router.get('/', async (req, res) => {
       query.category = category
     }
     
-    if (search) {
+    if (search && search.trim()) {
+      // Escape special regex characters
+      const searchRegex = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
+        { name: { $regex: searchRegex, $options: 'i' } },
+        { description: { $regex: searchRegex, $options: 'i' } },
+        { category: { $regex: searchRegex, $options: 'i' } },
       ]
     }
     
+    const limitNum = parseInt(limit) || 100
     const products = await Product.find(query)
-      .limit(parseInt(limit) || 100)
+      .limit(limitNum)
       .sort({ createdAt: -1 })
     
-    res.json({ products })
+    res.json({ 
+      products,
+      total: products.length,
+      search: search || null,
+      category: category || 'all'
+    })
   } catch (error) {
+    console.error('Error fetching products:', error)
     res.status(500).json({ message: error.message })
   }
 })

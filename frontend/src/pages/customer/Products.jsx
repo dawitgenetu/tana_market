@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Search, Filter, Grid, List } from 'lucide-react'
 import api from '../../utils/api'
@@ -12,12 +12,21 @@ import { Package } from 'lucide-react'
 import { PRODUCT_CATEGORIES, getCategoryIcon } from '../../utils/categories'
 
 const Products = () => {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all')
   const [categories] = useState(PRODUCT_CATEGORIES) // Use predefined categories
   const [viewMode, setViewMode] = useState('grid')
+  
+  // Update URL when search or category changes
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (searchTerm) params.set('search', searchTerm)
+    if (selectedCategory !== 'all') params.set('category', selectedCategory)
+    setSearchParams(params, { replace: true })
+  }, [searchTerm, selectedCategory, setSearchParams])
   
   useEffect(() => {
     fetchProducts()
@@ -71,11 +80,16 @@ const Products = () => {
               className="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="all">All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {getCategoryIcon(cat)} {cat}
-                </option>
-              ))}
+              {categories.map((cat) => {
+                const categoryValue = typeof cat === 'string' ? cat : cat.value
+                const categoryLabel = typeof cat === 'string' ? cat : cat.label
+                const categoryIcon = typeof cat === 'string' ? getCategoryIcon(cat) : cat.icon
+                return (
+                  <option key={categoryValue} value={categoryValue}>
+                    {categoryIcon} {categoryLabel}
+                  </option>
+                )
+              })}
             </select>
             
             {/* View Mode */}

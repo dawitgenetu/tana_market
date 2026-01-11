@@ -8,8 +8,7 @@ import {
   X, 
   Search,
   LogOut,
-  Package,
-  ShoppingBag
+  Package
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import useCartStore from '../../store/cartStore'
@@ -19,11 +18,20 @@ import Button from '../ui/Button'
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const { user, isAuthenticated, logout } = useAuthStore()
   const { getItemCount } = useCartStore()
   const navigate = useNavigate()
   
   const cartCount = getItemCount()
+  
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchQuery('')
+    }
+  }
   
   const handleLogout = () => {
     logout()
@@ -43,12 +51,15 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group">
-            <div className="p-2 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-lg">
-              <ShoppingBag className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-              Tana Market
-            </span>
+            <img 
+              src="/logo.png" 
+              alt="Tana Market Logo" 
+              className="h-12 w-auto object-contain"
+              onError={(e) => {
+                console.error('Logo failed to load:', e.target.src)
+                e.target.style.display = 'none'
+              }}
+            />
           </Link>
           
           {/* Desktop Navigation */}
@@ -70,16 +81,18 @@ const Navbar = () => {
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
             {/* Search (Desktop) */}
-            <div className="hidden lg:flex items-center">
+            <form onSubmit={handleSearch} className="hidden lg:flex items-center">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent w-64"
                 />
               </div>
-            </div>
+            </form>
             
             {/* Notifications */}
             {isAuthenticated && <NotificationBell />}
@@ -180,6 +193,20 @@ const Navbar = () => {
             className="md:hidden border-t border-gray-200 bg-white"
           >
             <div className="px-4 py-4 space-y-3">
+              {/* Mobile Search */}
+              <form onSubmit={handleSearch} className="lg:hidden">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+              </form>
+              
               <Link
                 to="/"
                 onClick={() => setIsMenuOpen(false)}

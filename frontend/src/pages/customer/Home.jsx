@@ -83,37 +83,6 @@ const Home = () => {
         </div>
       </section>
       
-      {/* Stats Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { label: 'Products', value: stats.totalProducts, icon: ShoppingBag },
-              { label: 'Orders', value: stats.totalOrders, icon: TrendingUp },
-              { label: 'Happy Customers', value: stats.happyCustomers, icon: Star },
-            ].map((stat, index) => {
-              const Icon = stat.icon
-              return (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card className="text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
-                      <Icon className="h-8 w-8 text-primary-600" />
-                    </div>
-                    <h3 className="text-4xl font-bold text-gray-900 mb-2">{stat.value}+</h3>
-                    <p className="text-gray-600">{stat.label}</p>
-                  </Card>
-                </motion.div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-      
       {/* Featured Products */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -188,6 +157,37 @@ const Home = () => {
               ))}
             </div>
           )}
+        </div>
+      </section>
+      
+      {/* Stats Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { label: 'Products', value: stats.totalProducts, icon: ShoppingBag },
+              { label: 'Orders', value: stats.totalOrders, icon: TrendingUp },
+              { label: 'Happy Customers', value: stats.happyCustomers, icon: Star },
+            ].map((stat, index) => {
+              const Icon = stat.icon
+              return (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
+                      <Icon className="h-8 w-8 text-primary-600" />
+                    </div>
+                    <h3 className="text-4xl font-bold text-gray-900 mb-2">{stat.value}+</h3>
+                    <p className="text-gray-600">{stat.label}</p>
+                  </Card>
+                </motion.div>
+              )
+            })}
+          </div>
         </div>
       </section>
     </div>
