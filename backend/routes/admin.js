@@ -18,8 +18,13 @@ router.get('/stats', async (req, res) => {
     const [totalUsers, totalProducts, totalOrders, recentOrders] = await Promise.all([
       User.countDocuments(),
       Product.countDocuments(),
-      Order.countDocuments(),
-      Order.find().populate('user', 'name').sort({ createdAt: -1 }).limit(5),
+      Order.countDocuments({ status: { $in: ['paid', 'approved', 'shipped', 'delivered'] } }),
+      Order.find({
+        status: { $in: ['paid', 'approved', 'shipped', 'delivered'] }
+      })
+        .populate('user', 'name')
+        .sort({ createdAt: -1 })
+        .limit(5),
     ])
     
     const totalRevenue = await Order.aggregate([
@@ -70,10 +75,12 @@ router.delete('/users/:id', async (req, res) => {
   }
 })
 
-// Get all orders
+// Get all orders (only paid orders)
 router.get('/orders', async (req, res) => {
   try {
-    const orders = await Order.find()
+    const orders = await Order.find({
+      status: { $in: ['paid', 'approved', 'shipped', 'delivered'] }
+    })
       .populate('user', 'name email')
       .populate('items.product')
       .sort({ createdAt: -1 })

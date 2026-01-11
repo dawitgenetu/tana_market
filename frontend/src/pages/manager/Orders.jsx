@@ -30,21 +30,23 @@ const ManagerOrders = () => {
   
   const handleApprove = async (orderId) => {
     try {
-      await api.put(`/orders/${orderId}/approve`)
+      await api.put(`/manager/orders/${orderId}/approve`)
       toast.success('Order approved')
       fetchOrders()
     } catch (error) {
-      toast.error('Failed to approve order')
+      console.error('Approve order error:', error)
+      toast.error(error.response?.data?.message || 'Failed to approve order')
     }
   }
   
   const handleShip = async (orderId) => {
     try {
-      await api.put(`/orders/${orderId}/ship`)
+      await api.put(`/manager/orders/${orderId}/ship`)
       toast.success('Order marked as shipped')
       fetchOrders()
     } catch (error) {
-      toast.error('Failed to update order')
+      console.error('Ship order error:', error)
+      toast.error(error.response?.data?.message || 'Failed to update order')
     }
   }
   
@@ -72,11 +74,19 @@ const ManagerOrders = () => {
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-        <p className="text-gray-600 mt-2">Manage and track customer orders</p>
+        <p className="text-gray-600 mt-2">Manage and track paid customer orders</p>
       </div>
       
-      <div className="space-y-4">
-        {orders.map((order, index) => (
+      {orders.length === 0 ? (
+        <Card>
+          <div className="text-center py-12">
+            <p className="text-gray-600 mb-4">No paid orders found</p>
+            <p className="text-sm text-gray-500">Only paid orders are displayed here</p>
+          </div>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {orders.map((order, index) => (
           <motion.div
             key={order._id}
             initial={{ opacity: 0, y: 20 }}
@@ -112,11 +122,18 @@ const ManagerOrders = () => {
                     Mark as Shipped
                   </Button>
                 )}
+                {order.status === 'shipped' && (
+                  <Badge variant="info">Shipped - Awaiting Delivery</Badge>
+                )}
+                {order.status === 'delivered' && (
+                  <Badge variant="success">Delivered</Badge>
+                )}
               </div>
             </Card>
           </motion.div>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

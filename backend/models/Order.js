@@ -49,19 +49,35 @@ const orderSchema = new mongoose.Schema({
   timestamps: true,
 })
 
-// Generate tracking number before saving
+// Generate tracking number only when order is paid
 orderSchema.pre('save', async function(next) {
-  if (!this.trackingNumber) {
+  // Only generate tracking number if status is paid and tracking number doesn't exist
+  if (this.status === 'paid' && !this.trackingNumber) {
     const date = new Date()
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '')
+    
+    // Count only paid orders with tracking numbers for the day
     const count = await mongoose.model('Order').countDocuments({
+      status: 'paid',
+      trackingNumber: { $exists: true, $ne: null },
       createdAt: {
         $gte: new Date(date.setHours(0, 0, 0, 0)),
         $lt: new Date(date.setHours(23, 59, 59, 999)),
       },
     })
+    
     this.trackingNumber = `TANA-${dateStr}-${String(count + 1).padStart(4, '0')}`
   }
+  
+  // Remove tracking number if order status changes from paid to something else (except cancelled)
+  if (this.isModified('status') && this.status !== 'paid' && this.status !== 'cancelled') {
+    // Keep tracking number for approved, shipped, delivered
+    // Only remove if going back to pending
+    if (this.status === 'pending') {
+      this.trackingNumber = undefined
+    }
+  }
+  
   next()
 })
 

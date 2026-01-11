@@ -30,16 +30,29 @@ router.post('/', authenticate, async (req, res) => {
   }
 })
 
-// Get order by tracking number
+// Get order by tracking number or order ID
 router.get('/tracking/:trackingNumber', authenticate, async (req, res) => {
   try {
-    const order = await Order.findOne({ trackingNumber: req.params.trackingNumber })
-      .populate('items.product')
-      .populate('user', 'name email')
+    const { trackingNumber } = req.params
+    
+    // Try to find by tracking number first, then by order ID
+    let order = await Order.findOne({ trackingNumber })
+    
+    if (!order) {
+      // If not found by tracking number, try by order ID
+      try {
+        order = await Order.findById(trackingNumber)
+      } catch (e) {
+        // Invalid ObjectId format, order not found
+      }
+    }
     
     if (!order) {
       return res.status(404).json({ message: 'Order not found' })
     }
+    
+    await order.populate('items.product')
+    await order.populate('user', 'name email')
     
     res.json(order)
   } catch (error) {

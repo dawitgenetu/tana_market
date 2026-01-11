@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { LogOut, User } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
+import NotificationBell from '../notifications/NotificationBell'
 import Button from '../ui/Button'
 
 const ManagerHeader = () => {
@@ -18,6 +19,7 @@ const ManagerHeader = () => {
         <h1 className="text-xl font-bold text-gray-900">Manager Dashboard</h1>
       </div>
       <div className="flex items-center space-x-4">
+        <NotificationBell />
         <div className="flex items-center space-x-2">
           <div className="h-8 w-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center text-white font-semibold">
             {user?.name?.charAt(0).toUpperCase() || 'M'}

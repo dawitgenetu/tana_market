@@ -3,6 +3,7 @@ import { authenticate } from '../middleware/auth.js'
 import Order from '../models/Order.js'
 import axios from 'axios'
 import crypto from 'crypto'
+import { notifyOrderStatusChange, notifyPaymentStatus, notifyNewPaidOrder } from '../utils/notifications.js'
 
 const router = express.Router()
 
@@ -25,8 +26,8 @@ router.post('/initialize', authenticate, async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized access to this order' })
     }
     
-    // Generate unique transaction reference
-    const txRef = order.trackingNumber || `TANA-${order._id.toString()}-${Date.now()}`
+    // Generate unique transaction reference (use order ID since tracking number doesn't exist yet)
+    const txRef = order.trackingNumber || `ORDER-${order._id.toString()}-${Date.now()}`
     
     // Prepare customer name
     const nameParts = (order.user.name || req.user.name || 'Customer').split(' ')
@@ -43,7 +44,7 @@ router.post('/initialize', authenticate, async (req, res) => {
       phone_number: order.user.phone || req.user.phone || '251900000000',
       tx_ref: txRef,
       callback_url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/verify`,
-      return_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/orders/${order.trackingNumber}`,
+      return_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/orders/${order._id}`,
       meta: {
         order_id: order._id.toString(),
         tracking_number: order.trackingNumber,
@@ -100,11 +101,12 @@ router.post('/verify', async (req, res) => {
       return res.status(400).json({ message: 'Transaction reference is required' })
     }
     
-    // Find order by tracking number or payment reference
+    // Find order by payment reference or order ID (tracking number may not exist yet for pending orders)
     const order = await Order.findOne({
       $or: [
-        { trackingNumber: tx_ref },
         { paymentReference: tx_ref },
+        { _id: tx_ref.replace('ORDER-', '').split('-')[0] },
+        { trackingNumber: tx_ref },
       ],
     })
     
@@ -133,15 +135,25 @@ router.post('/verify', async (req, res) => {
       const orderAmount = parseFloat(order.total)
       
       if (paymentData.status === 'success' && paymentAmount === orderAmount) {
-        // Payment successful
+        // Payment successful - update status to paid (this will trigger tracking number generation)
         order.status = 'paid'
         order.paymentReference = tx_ref
         await order.save()
         
-        console.log('Payment verified successfully for order:', order.trackingNumber)
+        // Reload order to get the generated tracking number
+        await order.populate('user', 'name email')
+        const updatedOrder = await Order.findById(order._id)
         
-        // Redirect to success page
-        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/orders/${order.trackingNumber}?payment=success`)
+        console.log('Payment verified successfully for order:', updatedOrder.trackingNumber || order._id)
+        
+        // Create notifications
+        await notifyOrderStatusChange(updatedOrder, 'paid', order.user._id)
+        await notifyPaymentStatus(order.user._id, true, order._id, updatedOrder.trackingNumber)
+        await notifyNewPaidOrder(updatedOrder)
+        
+        // Redirect to success page using tracking number or order ID
+        const redirectPath = updatedOrder.trackingNumber || order._id
+        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/orders/${redirectPath}?payment=success`)
       } else {
         console.log('Payment verification failed:', {
           status: paymentData.status,
@@ -149,11 +161,13 @@ router.post('/verify', async (req, res) => {
           orderAmount,
           match: paymentAmount === orderAmount
         })
-        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/orders/${order.trackingNumber}?payment=failed`)
+        const redirectPath = order.trackingNumber || order._id
+        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/orders/${redirectPath}?payment=failed`)
       }
     } catch (verifyError) {
       console.error('Chapa verification error:', verifyError.response?.data || verifyError.message)
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/orders/${order.trackingNumber}?payment=error`)
+      const redirectPath = order.trackingNumber || order._id
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/orders/${redirectPath}?payment=error`)
     }
   } catch (error) {
     console.error('Payment verification error:', error)
@@ -210,10 +224,13 @@ router.get('/verify/:txRef', authenticate, async (req, res) => {
       order.paymentReference = txRef
       await order.save()
       
+      // Reload order to get the generated tracking number
+      const updatedOrder = await Order.findById(order._id).populate('user', 'name email')
+      
       res.json({
         success: true,
         message: 'Payment verified successfully',
-        order: order,
+        order: updatedOrder,
       })
     } else {
       res.json({

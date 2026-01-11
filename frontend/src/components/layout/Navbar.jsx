@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import useCartStore from '../../store/cartStore'
+import NotificationBell from '../notifications/NotificationBell'
 import Button from '../ui/Button'
 
 const Navbar = () => {
@@ -79,6 +80,9 @@ const Navbar = () => {
                 />
               </div>
             </div>
+            
+            {/* Notifications */}
+            {isAuthenticated && <NotificationBell />}
             
             {/* Cart */}
             <Link 

@@ -30,6 +30,7 @@ import userRoutes from './routes/users.js'
 import commentRoutes from './routes/comments.js'
 import adminRoutes from './routes/admin.js'
 import managerRoutes from './routes/manager.js'
+import notificationRoutes from './routes/notifications.js'
 
 app.use('/api/auth', authRoutes)
 app.use('/api/products', productRoutes)
@@ -39,6 +40,7 @@ app.use('/api/users', userRoutes)
 app.use('/api/comments', commentRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/manager', managerRoutes)
+app.use('/api/notifications', notificationRoutes)
 
 // Stats endpoint
 app.get('/api/stats', async (req, res) => {
