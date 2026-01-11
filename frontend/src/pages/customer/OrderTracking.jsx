@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Package, CheckCircle2, Circle, Truck, MapPin } from 'lucide-react'
+import { Package, CheckCircle2, Circle, Truck, MapPin, RefreshCw } from 'lucide-react'
 import { formatCurrency } from '../../utils/currency'
+import { toast } from 'react-hot-toast'
 import api from '../../utils/api'
 import Card from '../../components/ui/Card'
 import Loading from '../../components/ui/Loading'
@@ -11,21 +12,58 @@ import Button from '../../components/ui/Button'
 
 const OrderTracking = () => {
   const { trackingNumber } = useParams()
+  const [searchParams] = useSearchParams()
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
-  
-  useEffect(() => {
-    fetchOrder()
-  }, [trackingNumber])
+  const [verifying, setVerifying] = useState(false)
   
   const fetchOrder = async () => {
     try {
       const response = await api.get(`/orders/tracking/${trackingNumber}`)
       setOrder(response.data)
+      
+      // Check for payment status in URL after order is loaded
+      const paymentStatus = searchParams.get('payment')
+      if (paymentStatus === 'success') {
+        toast.success('Payment successful!')
+        // Verify payment with order data
+        if (response.data.paymentReference || trackingNumber) {
+          verifyPayment(response.data.paymentReference || trackingNumber)
+        }
+      } else if (paymentStatus === 'failed') {
+        toast.error('Payment failed. Please try again.')
+      } else if (paymentStatus === 'error') {
+        toast.error('Payment verification error. Please contact support.')
+      }
     } catch (error) {
       console.error('Error fetching order:', error)
     } finally {
       setLoading(false)
+    }
+  }
+  
+  useEffect(() => {
+    fetchOrder()
+  }, [trackingNumber])
+  
+  const verifyPayment = async (txRef) => {
+    if (!txRef) return
+    
+    setVerifying(true)
+    try {
+      const response = await api.get(`/payments/verify/${txRef}`)
+      
+      if (response.data.success) {
+        toast.success('Payment verified successfully!')
+        fetchOrder() // Refresh order data
+      } else {
+        toast.error('Payment verification failed')
+      }
+    } catch (error) {
+      console.error('Payment verification error:', error)
+      toast.error('Failed to verify payment')
+    } finally {
+      setVerifying(false)
     }
   }
   
@@ -85,8 +123,24 @@ const OrderTracking = () => {
             <div>
               <p className="text-sm text-gray-600 mb-1">Tracking Number</p>
               <p className="text-2xl font-mono font-bold text-gray-900">{order.trackingNumber}</p>
+              {order.paymentReference && (
+                <p className="text-xs text-gray-500 mt-1">Payment Ref: {order.paymentReference}</p>
+              )}
             </div>
-            <Badge variant="primary" size="lg">{order.status.toUpperCase()}</Badge>
+            <div className="flex items-center space-x-3">
+              <Badge variant="primary" size="lg">{order.status.toUpperCase()}</Badge>
+              {order.status === 'pending' && (order.paymentReference || trackingNumber) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => verifyPayment(order.paymentReference || trackingNumber)}
+                  loading={verifying}
+                  icon={RefreshCw}
+                >
+                  Verify Payment
+                </Button>
+              )}
+            </div>
           </div>
         </Card>
         

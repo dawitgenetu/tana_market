@@ -18,6 +18,9 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
+// Webhook endpoint needs raw body for Chapa verification
+app.use('/api/payments/verify', express.raw({ type: 'application/json' }))
+
 // Routes
 import authRoutes from './routes/auth.js'
 import productRoutes from './routes/products.js'
