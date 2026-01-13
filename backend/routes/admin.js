@@ -110,7 +110,31 @@ router.put('/comments/:id/approve', async (req, res) => {
       req.params.id,
       { status: 'approved' },
       { new: true }
-    )
+    ).populate('product')
+    
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' })
+    }
+    
+    // Update product rating
+    const Product = (await import('../models/Product.js')).default
+    const Comment = (await import('../models/Comment.js')).default
+    
+    const reviews = await Comment.find({
+      product: comment.product._id,
+      status: 'approved',
+    })
+    
+    if (reviews.length > 0) {
+      const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
+      const averageRating = totalRating / reviews.length
+      
+      await Product.findByIdAndUpdate(comment.product._id, {
+        rating: Math.round(averageRating * 10) / 10,
+        reviewCount: reviews.length,
+      })
+    }
+    
     res.json(comment)
   } catch (error) {
     res.status(400).json({ message: error.message })
@@ -124,7 +148,36 @@ router.put('/comments/:id/reject', async (req, res) => {
       req.params.id,
       { status: 'rejected' },
       { new: true }
-    )
+    ).populate('product')
+    
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' })
+    }
+    
+    // Update product rating (remove this review from calculation)
+    const Product = (await import('../models/Product.js')).default
+    const Comment = (await import('../models/Comment.js')).default
+    
+    const reviews = await Comment.find({
+      product: comment.product._id,
+      status: 'approved',
+    })
+    
+    if (reviews.length > 0) {
+      const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
+      const averageRating = totalRating / reviews.length
+      
+      await Product.findByIdAndUpdate(comment.product._id, {
+        rating: Math.round(averageRating * 10) / 10,
+        reviewCount: reviews.length,
+      })
+    } else {
+      await Product.findByIdAndUpdate(comment.product._id, {
+        rating: 0,
+        reviewCount: 0,
+      })
+    }
+    
     res.json(comment)
   } catch (error) {
     res.status(400).json({ message: error.message })
@@ -154,6 +207,108 @@ router.get('/reports', async (req, res) => {
     })
   } catch (error) {
     res.status(500).json({ message: error.message })
+  }
+})
+
+// Get all return requests
+router.get('/returns', async (req, res) => {
+  try {
+    const orders = await Order.find({
+      'returnRequest.status': { $ne: 'none' }
+    })
+      .populate('user', 'name email')
+      .populate('items.product')
+      .populate('returnRequest.processedBy', 'name')
+      .sort({ 'returnRequest.requestedAt': -1 })
+    res.json(orders)
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+})
+
+// Approve return request
+router.put('/returns/:orderId/approve', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId).populate('user', 'name email')
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' })
+    }
+    
+    if (order.returnRequest.status !== 'requested') {
+      return res.status(400).json({ message: 'Return request is not in requested status' })
+    }
+    
+    order.returnRequest.status = 'approved'
+    order.returnRequest.approvedAt = new Date()
+    order.returnRequest.processedBy = req.user._id
+    
+    await order.save()
+    await order.populate('items.product')
+    
+    res.json(order)
+  } catch (error) {
+    res.status(400).json({ message: error.message })
+  }
+})
+
+// Reject return request
+router.put('/returns/:orderId/reject', async (req, res) => {
+  try {
+    const { rejectionReason } = req.body
+    const order = await Order.findById(req.params.orderId).populate('user', 'name email')
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' })
+    }
+    
+    if (order.returnRequest.status !== 'requested') {
+      return res.status(400).json({ message: 'Return request is not in requested status' })
+    }
+    
+    order.returnRequest.status = 'rejected'
+    order.returnRequest.rejectedAt = new Date()
+    order.returnRequest.rejectionReason = rejectionReason || 'Return request rejected'
+    order.returnRequest.processedBy = req.user._id
+    
+    await order.save()
+    await order.populate('items.product')
+    
+    res.json(order)
+  } catch (error) {
+    res.status(400).json({ message: error.message })
+  }
+})
+
+// Mark return as received and process refund
+router.put('/returns/:orderId/refund', async (req, res) => {
+  try {
+    const { refundAmount, refundReference } = req.body
+    const order = await Order.findById(req.params.orderId).populate('user', 'name email')
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' })
+    }
+    
+    if (order.returnRequest.status !== 'approved') {
+      return res.status(400).json({ message: 'Return must be approved before processing refund' })
+    }
+    
+    const refund = refundAmount || order.total
+    
+    order.returnRequest.status = 'refunded'
+    order.returnRequest.returnedAt = new Date()
+    order.returnRequest.refundedAt = new Date()
+    order.returnRequest.refundAmount = refund
+    order.returnRequest.refundReference = refundReference || `REF-${Date.now()}`
+    order.returnRequest.processedBy = req.user._id
+    
+    await order.save()
+    await order.populate('items.product')
+    
+    res.json(order)
+  } catch (error) {
+    res.status(400).json({ message: error.message })
   }
 })
 

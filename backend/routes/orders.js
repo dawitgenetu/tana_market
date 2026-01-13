@@ -80,4 +80,63 @@ router.put('/:id/cancel', authenticate, async (req, res) => {
   }
 })
 
+// Request return/refund
+router.post('/:id/return', authenticate, async (req, res) => {
+  try {
+    const { reason } = req.body
+    const order = await Order.findById(req.params.id)
+    
+    if (!order || order.user.toString() !== req.user._id.toString()) {
+      return res.status(404).json({ message: 'Order not found' })
+    }
+    
+    if (order.status !== 'delivered') {
+      return res.status(400).json({ message: 'Only delivered orders can be returned' })
+    }
+    
+    if (order.returnRequest.status !== 'none') {
+      return res.status(400).json({ message: 'Return request already exists for this order' })
+    }
+    
+    if (!reason || reason.trim().length === 0) {
+      return res.status(400).json({ message: 'Return reason is required' })
+    }
+    
+    order.returnRequest = {
+      status: 'requested',
+      reason: reason.trim(),
+      requestedAt: new Date(),
+    }
+    
+    await order.save()
+    await order.populate('items.product')
+    await order.populate('user', 'name email')
+    
+    res.json(order)
+  } catch (error) {
+    res.status(400).json({ message: error.message })
+  }
+})
+
+// Get return request details
+router.get('/:id/return', authenticate, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' })
+    }
+    
+    // Users can only see their own return requests, admins/managers can see all
+    if (order.user.toString() !== req.user._id.toString() && 
+        !['admin', 'manager'].includes(req.user.role)) {
+      return res.status(403).json({ message: 'Access denied' })
+    }
+    
+    res.json({ returnRequest: order.returnRequest })
+  } catch (error) {
+    res.status(400).json({ message: error.message })
+  }
+})
+
 export default router

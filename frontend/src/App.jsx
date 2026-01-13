@@ -21,11 +21,13 @@ import Checkout from './pages/customer/Checkout'
 import Orders from './pages/customer/Orders'
 import OrderTracking from './pages/customer/OrderTracking'
 import Profile from './pages/customer/Profile'
+import MyReviews from './pages/customer/MyReviews'
 
 // Manager Pages
 import ManagerDashboard from './pages/manager/Dashboard'
 import ManagerProducts from './pages/manager/Products'
 import ManagerOrders from './pages/manager/Orders'
+import ManagerReturns from './pages/manager/Returns'
 import ManagerComments from './pages/manager/Comments'
 
 // Admin Pages
@@ -33,6 +35,7 @@ import AdminDashboard from './pages/admin/Dashboard'
 import AdminUsers from './pages/admin/Users'
 import AdminProducts from './pages/admin/Products'
 import AdminOrders from './pages/admin/Orders'
+import AdminReturns from './pages/admin/Returns'
 import AdminComments from './pages/admin/Comments'
 import AdminReports from './pages/admin/Reports'
 import AdminLogs from './pages/admin/Logs'
@@ -124,6 +127,14 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/my-reviews" 
+            element={
+              <ProtectedRoute>
+                <MyReviews />
+              </ProtectedRoute>
+            } 
+          />
         </Route>
 
         {/* Manager Routes */}
@@ -137,6 +148,7 @@ function App() {
           <Route path="/manager/dashboard" element={<ManagerDashboard />} />
           <Route path="/manager/products" element={<ManagerProducts />} />
           <Route path="/manager/orders" element={<ManagerOrders />} />
+          <Route path="/manager/returns" element={<ManagerReturns />} />
           <Route path="/manager/comments" element={<ManagerComments />} />
         </Route>
 
@@ -152,6 +164,7 @@ function App() {
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
+          <Route path="/admin/returns" element={<AdminReturns />} />
           <Route path="/admin/comments" element={<AdminComments />} />
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/logs" element={<AdminLogs />} />

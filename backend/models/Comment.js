@@ -11,6 +11,11 @@ const commentSchema = new mongoose.Schema({
     ref: 'Product',
     required: true,
   },
+  order: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Order',
+    required: true,
+  },
   rating: {
     type: Number,
     required: true,
@@ -36,5 +41,8 @@ const commentSchema = new mongoose.Schema({
 }, {
   timestamps: true,
 })
+
+// Ensure one review per user per product per order
+commentSchema.index({ user: 1, product: 1, order: 1 }, { unique: true })
 
 export default mongoose.model('Comment', commentSchema)

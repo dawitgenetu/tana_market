@@ -39,7 +39,7 @@ const run = async () => {
     console.log('Creating partial unique index on trackingNumber...')
     await Order.collection.createIndex(
       { trackingNumber: 1 },
-      { unique: true, partialFilterExpression: { trackingNumber: { $exists: true, $ne: null } } }
+      { unique: true, partialFilterExpression: { trackingNumber: { $exists: true } } }
     )
 
     console.log('Partial unique index created successfully')

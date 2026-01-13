@@ -6,7 +6,8 @@ import {
   ShoppingCart, 
   MessageSquare, 
   BarChart3, 
-  FileText 
+  FileText,
+  RotateCcw
 } from 'lucide-react'
 
 const AdminSidebar = () => {
@@ -15,6 +16,7 @@ const AdminSidebar = () => {
     { path: '/admin/users', icon: Users, label: 'Users' },
     { path: '/admin/products', icon: Package, label: 'Products' },
     { path: '/admin/orders', icon: ShoppingCart, label: 'Orders' },
+    { path: '/admin/returns', icon: RotateCcw, label: 'Returns & Refunds' },
     { path: '/admin/comments', icon: MessageSquare, label: 'Comments' },
     { path: '/admin/reports', icon: BarChart3, label: 'Reports' },
     { path: '/admin/logs', icon: FileText, label: 'Activity Logs' },

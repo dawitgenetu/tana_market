@@ -8,7 +8,8 @@ import {
   X, 
   Search,
   LogOut,
-  Package
+  Package,
+  Star
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import useCartStore from '../../store/cartStore'

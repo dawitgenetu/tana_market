@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingCart, MessageSquare } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, MessageSquare, RotateCcw } from 'lucide-react'
 
 const ManagerSidebar = () => {
   const navItems = [
     { path: '/manager/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/manager/products', icon: Package, label: 'Products' },
     { path: '/manager/orders', icon: ShoppingCart, label: 'Orders' },
+    { path: '/manager/returns', icon: RotateCcw, label: 'Returns & Refunds' },
     { path: '/manager/comments', icon: MessageSquare, label: 'Comments' },
   ]
   

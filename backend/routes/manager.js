@@ -122,4 +122,106 @@ router.get('/comments', async (req, res) => {
   }
 })
 
+// Get all return requests
+router.get('/returns', async (req, res) => {
+  try {
+    const orders = await Order.find({
+      'returnRequest.status': { $ne: 'none' }
+    })
+      .populate('user', 'name email')
+      .populate('items.product')
+      .populate('returnRequest.processedBy', 'name')
+      .sort({ 'returnRequest.requestedAt': -1 })
+    res.json(orders)
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+})
+
+// Approve return request
+router.put('/returns/:orderId/approve', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId).populate('user', 'name email')
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' })
+    }
+    
+    if (order.returnRequest.status !== 'requested') {
+      return res.status(400).json({ message: 'Return request is not in requested status' })
+    }
+    
+    order.returnRequest.status = 'approved'
+    order.returnRequest.approvedAt = new Date()
+    order.returnRequest.processedBy = req.user._id
+    
+    await order.save()
+    await order.populate('items.product')
+    
+    res.json(order)
+  } catch (error) {
+    res.status(400).json({ message: error.message })
+  }
+})
+
+// Reject return request
+router.put('/returns/:orderId/reject', async (req, res) => {
+  try {
+    const { rejectionReason } = req.body
+    const order = await Order.findById(req.params.orderId).populate('user', 'name email')
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' })
+    }
+    
+    if (order.returnRequest.status !== 'requested') {
+      return res.status(400).json({ message: 'Return request is not in requested status' })
+    }
+    
+    order.returnRequest.status = 'rejected'
+    order.returnRequest.rejectedAt = new Date()
+    order.returnRequest.rejectionReason = rejectionReason || 'Return request rejected'
+    order.returnRequest.processedBy = req.user._id
+    
+    await order.save()
+    await order.populate('items.product')
+    
+    res.json(order)
+  } catch (error) {
+    res.status(400).json({ message: error.message })
+  }
+})
+
+// Mark return as received and process refund
+router.put('/returns/:orderId/refund', async (req, res) => {
+  try {
+    const { refundAmount, refundReference } = req.body
+    const order = await Order.findById(req.params.orderId).populate('user', 'name email')
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' })
+    }
+    
+    if (order.returnRequest.status !== 'approved') {
+      return res.status(400).json({ message: 'Return must be approved before processing refund' })
+    }
+    
+    const refund = refundAmount || order.total
+    
+    order.returnRequest.status = 'refunded'
+    order.returnRequest.returnedAt = new Date()
+    order.returnRequest.refundedAt = new Date()
+    order.returnRequest.refundAmount = refund
+    order.returnRequest.refundReference = refundReference || `REF-${Date.now()}`
+    order.returnRequest.processedBy = req.user._id
+    
+    await order.save()
+    await order.populate('items.product')
+    
+    res.json(order)
+  } catch (error) {
+    res.status(400).json({ message: error.message })
+  }
+})
+
 export default router
