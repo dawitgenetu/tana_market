@@ -40,7 +40,6 @@ const orderSchema = new mongoose.Schema({
   },
   trackingNumber: {
     type: String,
-    unique: true,
   },
   paymentReference: {
     type: String,
@@ -80,5 +79,8 @@ orderSchema.pre('save', async function(next) {
   
   next()
 })
+
+// Ensure unique tracking numbers only when the field exists (allow multiple docs without the field)
+orderSchema.index({ trackingNumber: 1 }, { unique: true, partialFilterExpression: { trackingNumber: { $exists: true, $ne: null } } })
 
 export default mongoose.model('Order', orderSchema)
