@@ -76,6 +76,9 @@ const Cart = () => {
                             src={item.images?.[0] || '/placeholder-product.jpg'}
                             alt={item.name}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.src = '/placeholder-product.jpg'
+                            }}
                           />
                         </div>
                       </Link>

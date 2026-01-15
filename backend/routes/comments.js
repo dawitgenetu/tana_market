@@ -69,6 +69,46 @@ router.get('/products/:productId/my-review', authenticate, async (req, res) => {
   }
 })
 
+// Check if user can review a product (has delivered orders with this product)
+router.get('/products/:productId/can-review', authenticate, async (req, res) => {
+  try {
+    // Find delivered orders that contain this product
+    const orders = await Order.find({
+      user: req.user._id,
+      status: 'delivered',
+      'items.product': req.params.productId,
+    }).select('_id trackingNumber items')
+    
+    if (orders.length === 0) {
+      return res.json({ canReview: false, orders: [] })
+    }
+    
+    // Get existing reviews for this product by this user
+    const existingReviews = await Comment.find({
+      user: req.user._id,
+      product: req.params.productId,
+    }).select('order')
+    
+    const reviewedOrderIds = existingReviews.map(r => r.order.toString())
+    
+    // Filter orders that haven't been reviewed yet
+    const reviewableOrders = orders.filter(order => 
+      !reviewedOrderIds.includes(order._id.toString())
+    )
+    
+    res.json({
+      canReview: reviewableOrders.length > 0,
+      orders: reviewableOrders.map(order => ({
+        _id: order._id,
+        trackingNumber: order.trackingNumber,
+      })),
+      hasReviewed: existingReviews.length > 0,
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+})
+
 // Create review (only for delivered orders)
 router.post('/', authenticate, async (req, res) => {
   try {

@@ -261,6 +261,9 @@ const ManagerProducts = () => {
                   src={product.images?.[0] || '/placeholder-product.jpg'}
                   alt={product.name}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.src = '/placeholder-product.jpg'
+                  }}
                 />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>

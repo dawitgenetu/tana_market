@@ -1,14 +1,21 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ShoppingBag, ArrowRight, Star, TrendingUp } from 'lucide-react'
+import { ShoppingBag, ArrowRight, Star, TrendingUp, ShoppingCart } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../../utils/api'
 import { formatCurrency } from '../../utils/currency'
+import useCartStore from '../../store/cartStore'
+import useAuthStore from '../../store/authStore'
+import { toast } from 'react-hot-toast'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import Loading from '../../components/ui/Loading'
 
 const Home = () => {
+  const navigate = useNavigate()
+  const { addItem } = useCartStore()
+  const { isAuthenticated } = useAuthStore()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
@@ -16,6 +23,30 @@ const Home = () => {
     totalOrders: 0,
     happyCustomers: 0,
   })
+  
+  const handleAddToCart = (product, e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!isAuthenticated) {
+      toast.error('Please login to add items to cart')
+      navigate('/login')
+      return
+    }
+    addItem(product, 1)
+    toast.success('Product added to cart!')
+  }
+  
+  const handleBuyNow = (product, e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!isAuthenticated) {
+      toast.error('Please login to buy products')
+      navigate('/login')
+      return
+    }
+    addItem(product, 1)
+    navigate('/checkout')
+  }
   
   useEffect(() => {
     fetchProducts()
@@ -47,8 +78,19 @@ const Home = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-600 via-primary-700 to-secondary-600 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section 
+        className="relative text-white py-20 bg-gradient-to-br from-primary-600 via-primary-700 to-secondary-600"
+        style={{
+          backgroundImage: 'url(/hero-bg.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        {/* Overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-600/90 via-primary-700/85 to-secondary-600/90"></div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -116,13 +158,16 @@ const Home = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Link to={`/products/${product._id}`}>
-                    <Card className="group cursor-pointer h-full flex flex-col">
-                      <div className="relative overflow-hidden rounded-lg mb-4 bg-gray-100 aspect-square">
+                  <Card className="group h-full flex flex-col">
+                    <Link to={`/products/${product._id}`}>
+                      <div className="relative overflow-hidden rounded-lg mb-4 bg-gray-100 aspect-square cursor-pointer">
                         <img
                           src={product.images?.[0] || '/placeholder-product.jpg'}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          onError={(e) => {
+                            e.target.src = '/placeholder-product.jpg'
+                          }}
                         />
                         {product.discount > 0 && (
                           <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm font-semibold">
@@ -132,27 +177,41 @@ const Home = () => {
                       </div>
                       <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
                       <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-1">{product.description}</p>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          {product.discount > 0 ? (
-                            <div>
-                              <span className="text-lg font-bold text-gray-900">
-                                {formatCurrency(product.price * (1 - product.discount / 100))}
-                              </span>
-                              <span className="text-sm text-gray-500 line-through ml-2">
-                                {formatCurrency(product.price)}
-                              </span>
-                            </div>
-                          ) : (
+                    </Link>
+                    <div className="flex items-center justify-between mt-auto">
+                      <div>
+                        {product.discount > 0 ? (
+                          <div>
                             <span className="text-lg font-bold text-gray-900">
+                              {formatCurrency(product.price * (1 - product.discount / 100))}
+                            </span>
+                            <span className="text-sm text-gray-500 line-through ml-2">
                               {formatCurrency(product.price)}
                             </span>
-                          )}
-                        </div>
-                        <Button size="sm">View</Button>
+                          </div>
+                        ) : (
+                          <span className="text-lg font-bold text-gray-900">
+                            {formatCurrency(product.price)}
+                          </span>
+                        )}
                       </div>
-                    </Card>
-                  </Link>
+                      <div className="flex items-center space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={(e) => handleAddToCart(product, e)}
+                          icon={ShoppingCart}
+                          title="Add to Cart"
+                        />
+                        <Button 
+                          size="sm"
+                          onClick={(e) => handleBuyNow(product, e)}
+                        >
+                          Buy
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
                 </motion.div>
               ))}
             </div>

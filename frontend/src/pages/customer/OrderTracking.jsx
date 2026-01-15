@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Package, CheckCircle2, Circle, Truck, MapPin, RefreshCw, Star, RotateCcw, MessageSquare } from 'lucide-react'
+import { Package, CheckCircle2, Circle, Truck, MapPin, RefreshCw, Star, RotateCcw, MessageSquare, Clock } from 'lucide-react'
 import { formatCurrency } from '../../utils/currency'
 import { toast } from 'react-hot-toast'
 import api from '../../utils/api'
@@ -233,6 +233,27 @@ const OrderTracking = () => {
     }
   }
 
+  const formatDeliveryTime = (minutes) => {
+    if (!minutes) return 'Not set'
+    if (minutes < 60) {
+      return `${minutes} minutes`
+    } else if (minutes < 1440) {
+      const hours = Math.floor(minutes / 60)
+      const mins = minutes % 60
+      if (mins > 0) {
+        return `${hours} hour${hours > 1 ? 's' : ''} ${mins} minute${mins > 1 ? 's' : ''}`
+      }
+      return `${hours} hour${hours > 1 ? 's' : ''}`
+    } else {
+      const days = Math.floor(minutes / 1440)
+      const hours = Math.floor((minutes % 1440) / 60)
+      if (hours > 0) {
+        return `${days} day${days > 1 ? 's' : ''} ${hours} hour${hours > 1 ? 's' : ''}`
+      }
+      return `${days} day${days > 1 ? 's' : ''}`
+    }
+  }
+  
   const getReturnStatusBadge = () => {
     if (!order?.returnRequest || order.returnRequest.status === 'none') return null
     
@@ -331,6 +352,14 @@ const OrderTracking = () => {
               <p className="text-2xl font-mono font-bold text-gray-900">{order.trackingNumber}</p>
               {order.paymentReference && (
                 <p className="text-xs text-gray-500 mt-1">Payment Ref: {order.paymentReference}</p>
+              )}
+              {order.estimatedDeliveryTime && order.status !== 'delivered' && (
+                <div className="flex items-center space-x-1 mt-2">
+                  <Clock className="h-4 w-4 text-primary-600" />
+                  <p className="text-sm text-gray-700">
+                    Expected Delivery: {formatDeliveryTime(order.estimatedDeliveryTime)}
+                  </p>
+                </div>
               )}
             </div>
             <div className="flex items-center space-x-3 flex-wrap gap-2">
@@ -445,6 +474,9 @@ const OrderTracking = () => {
                         src={item.product?.images?.[0] || '/placeholder-product.jpg'}
                         alt={item.product?.name}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = '/placeholder-product.jpg'
+                        }}
                       />
                     </div>
                     <div className="flex-1 min-w-0">

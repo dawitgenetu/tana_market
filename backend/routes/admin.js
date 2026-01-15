@@ -32,13 +32,86 @@ router.get('/stats', async (req, res) => {
       { $group: { _id: null, total: { $sum: '$total' } } },
     ])
     
+    // Get real-time sales data for last 30 days
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    
+    const salesData = await Order.aggregate([
+      {
+        $match: {
+          status: { $in: ['paid', 'approved', 'shipped', 'delivered'] },
+          createdAt: { $gte: thirtyDaysAgo }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+          },
+          sales: { $sum: '$total' },
+          orders: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ])
+    
+    // Get today's sales
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todaySales = await Order.aggregate([
+      {
+        $match: {
+          status: { $in: ['paid', 'approved', 'shipped', 'delivered'] },
+          createdAt: { $gte: today }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          sales: { $sum: '$total' },
+          orders: { $sum: 1 }
+        }
+      }
+    ])
+    
+    // Get delivery time statistics
+    const deliveryStats = await Order.aggregate([
+      {
+        $match: {
+          status: { $in: ['paid', 'approved', 'shipped', 'delivered'] },
+          estimatedDeliveryTime: { $exists: true }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          avgDeliveryTime: { $avg: '$estimatedDeliveryTime' },
+          minDeliveryTime: { $min: '$estimatedDeliveryTime' },
+          maxDeliveryTime: { $max: '$estimatedDeliveryTime' },
+          totalOrders: { $sum: 1 }
+        }
+      }
+    ])
+    
     res.json({
       totalUsers,
       totalProducts,
       totalOrders,
       totalRevenue: totalRevenue[0]?.total || 0,
       recentOrders,
-      salesData: [],
+      salesData: salesData.map(item => ({
+        date: item._id,
+        sales: item.sales,
+        orders: item.orders
+      })),
+      todaySales: todaySales[0]?.sales || 0,
+      todayOrders: todaySales[0]?.orders || 0,
+      deliveryStats: deliveryStats[0] || {
+        avgDeliveryTime: 1440,
+        minDeliveryTime: 2,
+        maxDeliveryTime: 14400,
+        totalOrders: 0
+      }
     })
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -117,9 +190,6 @@ router.put('/comments/:id/approve', async (req, res) => {
     }
     
     // Update product rating
-    const Product = (await import('../models/Product.js')).default
-    const Comment = (await import('../models/Comment.js')).default
-    
     const reviews = await Comment.find({
       product: comment.product._id,
       status: 'approved',
@@ -155,9 +225,6 @@ router.put('/comments/:id/reject', async (req, res) => {
     }
     
     // Update product rating (remove this review from calculation)
-    const Product = (await import('../models/Product.js')).default
-    const Comment = (await import('../models/Comment.js')).default
-    
     const reviews = await Comment.find({
       product: comment.product._id,
       status: 'approved',
@@ -200,12 +267,126 @@ router.get('/logs', async (req, res) => {
 // Get reports
 router.get('/reports', async (req, res) => {
   try {
+    // Get sales data for last 12 months
+    const salesData = await Order.aggregate([
+      {
+        $match: {
+          status: { $in: ['paid', 'approved', 'shipped', 'delivered'] },
+          createdAt: { $gte: new Date(new Date().setMonth(new Date().getMonth() - 12)) }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          totalSales: { $sum: '$total' },
+          orderCount: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1 }
+      }
+    ])
+
+    // Format sales data
+    const sales = salesData.map(item => ({
+      period: `${new Date(item._id.year, item._id.month - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`,
+      sales: item.totalSales,
+      orders: item.orderCount
+    }))
+
+    // Get top products by sales
+    const topProducts = await Order.aggregate([
+      {
+        $match: {
+          status: { $in: ['paid', 'approved', 'shipped', 'delivered'] }
+        }
+      },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.product',
+          totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+          totalQuantity: { $sum: '$items.quantity' }
+        }
+      },
+      { $sort: { totalRevenue: -1 } },
+      { $limit: 10 }
+    ])
+
+    const products = await Promise.all(
+      topProducts.map(async (item) => {
+        const product = await Product.findById(item._id).select('name')
+        return {
+          name: product?.name || 'Unknown',
+          revenue: item.totalRevenue,
+          quantity: item.totalQuantity
+        }
+      })
+    )
+
+    // Get category distribution
+    const categoryData = await Order.aggregate([
+      {
+        $match: {
+          status: { $in: ['paid', 'approved', 'shipped', 'delivered'] }
+        }
+      },
+      { $unwind: '$items' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'items.product',
+          foreignField: '_id',
+          as: 'productData'
+        }
+      },
+      { $unwind: '$productData' },
+      {
+        $group: {
+          _id: '$productData.category',
+          totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+          orderCount: { $sum: 1 }
+        }
+      },
+      { $sort: { totalRevenue: -1 } }
+    ])
+
+    const categories = categoryData.map(item => ({
+      name: item._id || 'Uncategorized',
+      value: item.totalRevenue
+    }))
+
+    // Get overall stats
+    const totalRevenue = await Order.aggregate([
+      {
+        $match: {
+          status: { $in: ['paid', 'approved', 'shipped', 'delivered'] }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$total' },
+          count: { $sum: 1 }
+        }
+      }
+    ])
+
     res.json({
-      sales: [],
-      products: [],
-      categories: [],
+      sales,
+      products,
+      categories,
+      stats: {
+        totalRevenue: totalRevenue[0]?.total || 0,
+        totalOrders: totalRevenue[0]?.count || 0,
+        averageOrderValue: totalRevenue[0]?.total / (totalRevenue[0]?.count || 1) || 0
+      }
     })
   } catch (error) {
+    console.error('Reports error:', error)
     res.status(500).json({ message: error.message })
   }
 })

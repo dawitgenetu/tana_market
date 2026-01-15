@@ -29,21 +29,27 @@ const AdminComments = () => {
   
   const handleApprove = async (commentId) => {
     try {
-      await api.put(`/admin/comments/${commentId}/approve`)
-      toast.success('Comment approved')
-      fetchComments()
+      const response = await api.put(`/admin/comments/${commentId}/approve`)
+      if (response.data) {
+        toast.success('Comment approved successfully')
+        fetchComments()
+      }
     } catch (error) {
-      toast.error('Failed to approve comment')
+      console.error('Approve error:', error)
+      toast.error(error.response?.data?.message || 'Failed to approve comment')
     }
   }
   
   const handleReject = async (commentId) => {
     try {
-      await api.put(`/admin/comments/${commentId}/reject`)
-      toast.success('Comment rejected')
-      fetchComments()
+      const response = await api.put(`/admin/comments/${commentId}/reject`)
+      if (response.data) {
+        toast.success('Comment rejected successfully')
+        fetchComments()
+      }
     } catch (error) {
-      toast.error('Failed to reject comment')
+      console.error('Reject error:', error)
+      toast.error(error.response?.data?.message || 'Failed to reject comment')
     }
   }
   

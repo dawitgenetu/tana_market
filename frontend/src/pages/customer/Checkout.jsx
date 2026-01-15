@@ -51,6 +51,9 @@ const Checkout = () => {
         amount: total,
       })
       
+      // Clear cart after successful order creation
+      clearCart()
+      
       // Redirect to Chapa payment
       if (paymentResponse.data.checkout_url) {
         window.location.href = paymentResponse.data.checkout_url
@@ -103,7 +106,7 @@ const Checkout = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input
                       label="City"
-                      placeholder="Addis Ababa"
+                      placeholder="Bahir Dar"
                       value={shippingInfo.city}
                       onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
                       required

@@ -44,6 +44,19 @@ const orderSchema = new mongoose.Schema({
   paymentReference: {
     type: String,
   },
+  estimatedDeliveryTime: {
+    type: Number, // in minutes (2 minutes to 10 days = 14400 minutes)
+    default: 1440, // Default 24 hours (1 day)
+    min: 2,
+    max: 14400, // 10 days
+  },
+  deliveryTimeSetBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  deliveryTimeSetAt: {
+    type: Date,
+  },
   returnRequest: {
     status: {
       type: String,
