@@ -7,32 +7,76 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Tana Market Brand Colors
         primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-          950: '#082f49',
+          DEFAULT: '#0B5ED7', // Primary Blue (Lake Blue)
+          50: '#E3F2FD', // Light Sky Blue
+          100: '#BBDEFB',
+          200: '#90CAF9',
+          300: '#64B5F6',
+          400: '#42A5F5',
+          500: '#2196F3',
+          600: '#0B5ED7', // Primary Blue
+          700: '#0D47A1',
+          800: '#0A3D91',
+          900: '#082E6B',
         },
-        secondary: {
-          50: '#faf5ff',
-          100: '#f3e8ff',
-          200: '#e9d5ff',
-          300: '#d8b4fe',
-          400: '#c084fc',
-          500: '#a855f7',
-          600: '#9333ea',
-          700: '#7e22ce',
-          800: '#6b21a8',
-          900: '#581c87',
-          950: '#3b0764',
+        teal: {
+          DEFAULT: '#0A8F8F', // Deep Teal
+          50: '#E0F7FA',
+          100: '#B2EBF2',
+          200: '#80DEEA',
+          300: '#4DD0E1',
+          400: '#26C6DA',
+          500: '#00BCD4',
+          600: '#0A8F8F', // Deep Teal
+          700: '#00838F',
+          800: '#006064',
+          900: '#004D40',
         },
+        green: {
+          DEFAULT: '#4CAF50', // Brand Green (Tana Green)
+          50: '#E8F5E9',
+          100: '#C8E6C9',
+          200: '#A5D6A7',
+          300: '#81C784',
+          400: '#66BB6A',
+          500: '#4CAF50', // Brand Green
+          600: '#43A047',
+          700: '#388E3C',
+          800: '#2E7D32',
+          900: '#1B5E20',
+        },
+        'soft-green': {
+          DEFAULT: '#8BC34A',
+          50: '#F1F8E9',
+          100: '#DCEDC8',
+          200: '#C5E1A5',
+          300: '#AED581',
+          400: '#9CCC65',
+          500: '#8BC34A', // Soft Green
+          600: '#7CB342',
+          700: '#689F38',
+          800: '#558B2F',
+          900: '#33691E',
+        },
+        yellow: {
+          DEFAULT: '#F4B400', // Accent Yellow (Sun)
+          50: '#FFFDE7',
+          100: '#FFF9C4',
+          200: '#FFF59D',
+          300: '#FFF176',
+          400: '#FFEE58',
+          500: '#F4B400', // Accent Yellow
+          600: '#FDD835',
+          700: '#FBC02D',
+          800: '#F9A825',
+          900: '#F57F17',
+        },
+        // Neutral colors
+        'dark-text': '#1F2937',
+        'muted-text': '#6B7280',
+        'border': '#E5E7EB',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

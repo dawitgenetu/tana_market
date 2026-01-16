@@ -87,8 +87,18 @@ const Home = () => {
           backgroundRepeat: 'no-repeat',
         }}
       >
-        {/* Overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-600/90 via-primary-700/85 to-secondary-600/90"></div>
+        {/* Cartoon shopping image background */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'url(/cartoon-shopping.webp)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
+        ></div>
+        {/* Opacity overlay for better text readability */}
+        <div className="absolute inset-0 bg-black opacity-50"></div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
           <motion.div

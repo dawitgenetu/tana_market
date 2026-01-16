@@ -9,11 +9,11 @@ const Footer = () => {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="flex items-center space-x-2 mb-4">
-              <img 
-                src="/logo.png" 
-                alt="Tana Market Logo" 
-                className="h-12 w-auto object-contain"
-                style={{ maxHeight: '48px' }}
+              <img
+                src="/logo.png"
+                alt="Tana Market Logo"
+                className="h-16 w-auto object-contain"
+                style={{ maxHeight: '64px' }}
               />
             </Link>
             <p className="text-gray-400 mb-4 max-w-md">
@@ -34,7 +34,7 @@ const Footer = () => {
               </a>
             </div>
           </div>
-          
+
           {/* Quick Links */}
           <div>
             <h3 className="text-white font-semibold mb-4">Quick Links</h3>
@@ -61,7 +61,7 @@ const Footer = () => {
               </li>
             </ul>
           </div>
-          
+
           {/* Support */}
           <div>
             <h3 className="text-white font-semibold mb-4">Support</h3>
@@ -89,7 +89,7 @@ const Footer = () => {
             </ul>
           </div>
         </div>
-        
+
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
           <p>&copy; {new Date().getFullYear()} Tana Market. All rights reserved.</p>
         </div>

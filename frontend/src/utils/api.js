@@ -47,8 +47,8 @@ api.interceptors.response.use(
     // Handle network errors
     if (!error.response) {
       if (error.code === 'ECONNREFUSED' || error.message === 'Network Error') {
-        console.error('Backend server is not running. Please start the backend server on port 5000.')
-        error.message = 'Cannot connect to server. Please make sure the backend is running on port 5000.'
+        console.error('Backend server is not running. Please start the backend server on port 5001.')
+        error.message = 'Cannot connect to server. Please make sure the backend is running on port 5001.'
       }
     }
     

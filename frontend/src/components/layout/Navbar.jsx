@@ -1,11 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  ShoppingCart, 
-  User, 
-  Menu, 
-  X, 
+import {
+  ShoppingCart,
+  User,
+  Menu,
+  X,
   Search,
   LogOut,
   Package,
@@ -23,9 +23,9 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuthStore()
   const { getItemCount } = useCartStore()
   const navigate = useNavigate()
-  
+
   const cartCount = getItemCount()
-  
+
   const handleSearch = (e) => {
     e.preventDefault()
     if (searchQuery.trim()) {
@@ -33,52 +33,54 @@ const Navbar = () => {
       setSearchQuery('')
     }
   }
-  
+
   const handleLogout = () => {
     logout()
     navigate('/')
     setIsUserMenuOpen(false)
   }
-  
+
   const getDashboardLink = () => {
     if (user?.role === 'admin') return '/admin/dashboard'
     if (user?.role === 'manager') return '/manager/dashboard'
     return '/profile'
   }
-  
+
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group">
-            <img 
-              src="/logo.png" 
-              alt="Tana Market Logo" 
-              className="h-12 w-auto object-contain"
+            <img
+              src="/logo.png"
+              alt="Tana Market Logo"
+              className="h-16 w-auto object-contain"
               onError={(e) => {
                 console.error('Logo failed to load:', e.target.src)
                 e.target.style.display = 'none'
               }}
             />
           </Link>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link 
-              to="/" 
-              className="text-gray-700 hover:text-primary-600 transition-colors font-medium"
+            <Link
+              to="/"
+              className="text-gray-700 hover:text-primary transition-colors font-medium relative group"
             >
               Home
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
-            <Link 
-              to="/products" 
-              className="text-gray-700 hover:text-primary-600 transition-colors font-medium"
+            <Link
+              to="/products"
+              className="text-gray-700 hover:text-primary transition-colors font-medium relative group"
             >
               Products
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
           </div>
-          
+
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
             {/* Search (Desktop) */}
@@ -94,13 +96,13 @@ const Navbar = () => {
                 />
               </div>
             </form>
-            
+
             {/* Notifications */}
             {isAuthenticated && <NotificationBell />}
-            
+
             {/* Cart */}
-            <Link 
-              to="/cart" 
+            <Link
+              to="/cart"
               className="relative p-2 text-gray-700 hover:text-primary-600 transition-colors"
             >
               <ShoppingCart className="h-6 w-6" />
@@ -110,7 +112,7 @@ const Navbar = () => {
                 </span>
               )}
             </Link>
-            
+
             {/* User Menu */}
             {isAuthenticated ? (
               <div className="relative">
@@ -125,7 +127,7 @@ const Navbar = () => {
                     {user?.name || 'User'}
                   </span>
                 </button>
-                
+
                 <AnimatePresence>
                   {isUserMenuOpen && (
                     <motion.div
@@ -172,7 +174,7 @@ const Navbar = () => {
                 </Button>
               </div>
             )}
-            
+
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -183,7 +185,7 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Mobile Menu */}
       <AnimatePresence>
         {isMenuOpen && (
@@ -207,7 +209,7 @@ const Navbar = () => {
                   />
                 </div>
               </form>
-              
+
               <Link
                 to="/"
                 onClick={() => setIsMenuOpen(false)}

@@ -22,6 +22,8 @@ import Orders from './pages/customer/Orders'
 import OrderTracking from './pages/customer/OrderTracking'
 import Profile from './pages/customer/Profile'
 import MyReviews from './pages/customer/MyReviews'
+import Contact from './pages/customer/Contact'
+import About from './pages/customer/About'
 
 // Manager Pages
 import ManagerDashboard from './pages/manager/Dashboard'
@@ -135,6 +137,8 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<About />} />
         </Route>
 
         {/* Manager Routes */}

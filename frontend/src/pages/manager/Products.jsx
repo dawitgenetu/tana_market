@@ -113,7 +113,7 @@ const ManagerProducts = () => {
       if (!error.response) {
         // Network error - backend not running
         if (error.message?.includes('connect') || error.message?.includes('Network Error')) {
-          errorMessage = 'Cannot connect to server. Please make sure the backend is running on port 5000.'
+          errorMessage = 'Cannot connect to server. Please make sure the backend is running on port 5001.'
         } else {
           errorMessage = error.message || errorMessage
         }

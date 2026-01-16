@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Mail, Lock, User, Phone } from 'lucide-react'
+import { Mail, Lock, User, Phone, ArrowLeft } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import { toast } from 'react-hot-toast'
 import Button from '../../components/ui/Button'
@@ -19,35 +19,35 @@ const Register = () => {
   const [loading, setLoading] = useState(false)
   const { register } = useAuthStore()
   const navigate = useNavigate()
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match')
       return
     }
-    
+
     if (formData.password.length < 6) {
       toast.error('Password must be at least 6 characters')
       return
     }
-    
+
     setLoading(true)
-    
+
     const { confirmPassword, ...userData } = formData
     const result = await register(userData)
-    
+
     if (result.success) {
       toast.success('Registration successful!')
       navigate('/')
     } else {
       toast.error(result.error || 'Registration failed')
     }
-    
+
     setLoading(false)
   }
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -55,12 +55,23 @@ const Register = () => {
       className="w-full"
     >
       <Card className="border-0 shadow-xl">
+        {/* Back to Home Link */}
+        <div className="mb-4">
+          <Link
+            to="/"
+            className="inline-flex items-center text-sm text-gray-600 hover:text-primary-600 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back to Home
+          </Link>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-4">
-            <img 
-              src="/logo.png" 
-              alt="Tana Market Logo" 
+            <img
+              src="/logo.png"
+              alt="Tana Market Logo"
               className="h-20 w-auto object-contain"
               style={{ maxHeight: '80px' }}
             />
@@ -68,7 +79,7 @@ const Register = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
           <p className="text-gray-600">Sign up to start shopping</p>
         </div>
-        
+
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           <Input
@@ -80,7 +91,7 @@ const Register = () => {
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
           />
-          
+
           <Input
             type="email"
             label="Email Address"
@@ -90,7 +101,7 @@ const Register = () => {
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             required
           />
-          
+
           <Input
             type="tel"
             label="Phone Number"
@@ -100,7 +111,7 @@ const Register = () => {
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             required
           />
-          
+
           <Input
             type="password"
             label="Password"
@@ -110,7 +121,7 @@ const Register = () => {
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             required
           />
-          
+
           <Input
             type="password"
             label="Confirm Password"
@@ -120,11 +131,11 @@ const Register = () => {
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
             required
           />
-          
+
           <div className="flex items-start">
-            <input 
-              type="checkbox" 
-              className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" 
+            <input
+              type="checkbox"
+              className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               required
             />
             <label className="ml-2 text-sm text-gray-600">
@@ -138,7 +149,7 @@ const Register = () => {
               </Link>
             </label>
           </div>
-          
+
           <Button
             type="submit"
             className="w-full"
@@ -148,7 +159,7 @@ const Register = () => {
             Create Account
           </Button>
         </form>
-        
+
         {/* Footer */}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">

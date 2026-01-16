@@ -51,7 +51,7 @@ router.post('/initialize', authenticate, async (req, res) => {
       last_name: lastName,
       phone_number: order.user.phone || req.user.phone || '251900000000',
       tx_ref: txRef,
-      callback_url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/verify`,
+      callback_url: `${process.env.BACKEND_URL || 'http://localhost:5001'}/api/payments/verify`,
       return_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/orders/${order._id}?auto_verify=true&tx_ref=${txRef}&orderId=${order._id}`,
       meta: {
         order_id: order._id.toString(),
