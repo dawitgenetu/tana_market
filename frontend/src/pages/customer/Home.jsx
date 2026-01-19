@@ -107,7 +107,7 @@ const Home = () => {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white">
               Welcome to Tana Market
             </h1>
             <p className="text-xl md:text-2xl text-primary-100 mb-8 max-w-2xl mx-auto">

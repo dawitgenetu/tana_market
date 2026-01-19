@@ -19,7 +19,7 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false)
   const [shippingInfo, setShippingInfo] = useState({
     address: '',
-    city: '',
+    city: 'Bahir Dar',
     phone: user?.phone || '',
     notes: '',
   })
@@ -105,18 +105,24 @@ const Checkout = () => {
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input
-                      label="City"
+                      label="City (Only Bahir Dar Supported)"
                       placeholder="Bahir Dar"
                       value={shippingInfo.city}
-                      onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
+                      readOnly
                       required
                     />
                     <Input
-                      label="Phone Number"
+                      label="Phone Number (from your profile)"
                       type="tel"
                       placeholder="+251 9XX XXX XXX"
                       value={shippingInfo.phone}
-                      onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
+                      onChange={(e) => {
+                        // Allow editing only if no phone is set from profile
+                        if (!user?.phone) {
+                          setShippingInfo({ ...shippingInfo, phone: e.target.value })
+                        }
+                      }}
+                      readOnly={!!user?.phone}
                       required
                     />
                   </div>

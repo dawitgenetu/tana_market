@@ -27,18 +27,41 @@ const OrderTracking = () => {
   const [submittingReturn, setSubmittingReturn] = useState(false)
   const [reviews, setReviews] = useState({})
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false)
-  
+  const [returnReasonType, setReturnReasonType] = useState('')
+
+  const refundReasons = [
+    "Changed my mind",
+    "Ordered by mistake",
+    "Found a better price",
+    "Shipping time too long",
+    "Other"
+  ]
+
+  const returnReasonsList = [
+    "Damaged / Defective",
+    "Wrong item received",
+    "Item not as described",
+    "Quality not as expected",
+    "Missing parts",
+    "Changed my mind",
+    "Other"
+  ]
+
+  const getReasonsList = (status) => {
+    return status === 'delivered' ? returnReasonsList : refundReasons
+  }
+
   const fetchOrder = async () => {
     try {
       const response = await api.get(`/orders/tracking/${trackingNumber}`)
       const orderData = response.data
       setOrder(orderData)
-      
+
       // Check for auto_verify flag or payment status in URL
       const autoVerify = searchParams.get('auto_verify')
       const paymentStatus = searchParams.get('payment')
       const txRef = searchParams.get('tx_ref')
-      
+
       // Automatically verify payment when returning from Chapa or if order is pending with payment reference
       if (orderData.status === 'pending' && orderData.paymentReference) {
         // If returning from Chapa, verify immediately
@@ -61,7 +84,7 @@ const OrderTracking = () => {
           }, 2000) // Wait 2 seconds for webhook to process first
         }
       }
-      
+
       // Show success message if payment was auto-verified
       if (paymentStatus === 'success' && searchParams.get('auto_verified') === 'true') {
         toast.success('Payment verified successfully!')
@@ -86,7 +109,7 @@ const OrderTracking = () => {
     setIsVerifyingPayment(true)
     try {
       console.log('Auto-verifying payment for order:', orderData._id, 'tx_ref:', txRef || orderData.paymentReference)
-      
+
       const response = await api.post('/payments/verify-auto', {
         tx_ref: txRef || orderData.paymentReference,
         orderId: orderData._id,
@@ -97,7 +120,7 @@ const OrderTracking = () => {
         // Payment verified - refresh order data immediately
         const updatedResponse = await api.get(`/orders/tracking/${trackingNumber}`)
         setOrder(updatedResponse.data)
-        
+
         // Show success message
         if (orderData.status === 'pending' && updatedResponse.data.status === 'paid') {
           toast.success('Payment verified successfully!')
@@ -117,7 +140,7 @@ const OrderTracking = () => {
       setIsVerifyingPayment(false)
     }
   }
-  
+
   useEffect(() => {
     fetchOrder()
   }, [trackingNumber])
@@ -134,7 +157,7 @@ const OrderTracking = () => {
 
     const autoVerify = searchParams.get('auto_verify')
     const txRef = searchParams.get('tx_ref')
-    
+
     // If auto_verify flag is set (returning from Chapa), verify immediately
     if (autoVerify === 'true' && order.paymentReference) {
       autoVerifyPayment(order, txRef || order.paymentReference)
@@ -144,7 +167,7 @@ const OrderTracking = () => {
 
   const fetchReviews = async () => {
     if (!order || !order.items) return
-    
+
     const reviewMap = {}
     for (const item of order.items) {
       try {
@@ -208,26 +231,37 @@ const OrderTracking = () => {
 
   const handleReturnRequest = () => {
     setReturnReason('')
+    setReturnReasonType('')
     setReturnModalOpen(true)
   }
 
   const submitReturnRequest = async () => {
-    if (!returnReason.trim()) {
-      toast.error('Please provide a reason for return')
+    if (!returnReasonType) {
+      toast.error('Please select a reason')
+      return
+    }
+
+    if (returnReasonType === 'Other' && !returnReason.trim()) {
+      toast.error('Please provide details for "Other"')
       return
     }
 
     setSubmittingReturn(true)
     try {
+      const finalReason = returnReasonType === 'Other'
+        ? returnReason.trim()
+        : `${returnReasonType}${returnReason.trim() ? `: ${returnReason.trim()}` : ''}`
+
       await api.post(`/orders/${order._id}/return`, {
-        reason: returnReason.trim(),
+        reason: finalReason,
       })
-      toast.success('Return request submitted successfully')
+      toast.success('Request submitted successfully')
       setReturnModalOpen(false)
       setReturnReason('')
+      setReturnReasonType('')
       fetchOrder()
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to submit return request')
+      toast.error(error.response?.data?.message || 'Failed to submit request')
     } finally {
       setSubmittingReturn(false)
     }
@@ -253,10 +287,10 @@ const OrderTracking = () => {
       return `${days} day${days > 1 ? 's' : ''}`
     }
   }
-  
+
   const getReturnStatusBadge = () => {
     if (!order?.returnRequest || order.returnRequest.status === 'none') return null
-    
+
     const statusMap = {
       requested: { variant: 'warning', label: 'Return Requested' },
       approved: { variant: 'info', label: 'Return Approved' },
@@ -264,14 +298,14 @@ const OrderTracking = () => {
       returned: { variant: 'info', label: 'Returned' },
       refunded: { variant: 'success', label: 'Refunded' },
     }
-    
+
     const statusInfo = statusMap[order.returnRequest.status] || { variant: 'gray', label: order.returnRequest.status }
     return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
   }
-  
+
   const verifyPayment = async (txRef) => {
     if (!txRef && !order) return
-    
+
     setVerifying(true)
     try {
       // Use automatic verification endpoint
@@ -279,7 +313,7 @@ const OrderTracking = () => {
         tx_ref: txRef || order?.paymentReference,
         orderId: order?._id,
       })
-      
+
       if (response.data.success) {
         toast.success('Payment verified successfully!')
         fetchOrder() // Refresh order data
@@ -293,7 +327,7 @@ const OrderTracking = () => {
       setVerifying(false)
     }
   }
-  
+
   const statusSteps = [
     { key: 'pending', label: 'Order Placed' },
     { key: 'paid', label: 'Payment Confirmed' },
@@ -301,13 +335,13 @@ const OrderTracking = () => {
     { key: 'shipped', label: 'Shipped' },
     { key: 'delivered', label: 'Delivered' },
   ]
-  
+
   const getCurrentStepIndex = () => {
     if (!order) return 0
     const index = statusSteps.findIndex(step => step.key === order.status)
     return index >= 0 ? index : 0
   }
-  
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-12 flex items-center justify-center">
@@ -315,7 +349,7 @@ const OrderTracking = () => {
       </div>
     )
   }
-  
+
   if (!order) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
@@ -330,9 +364,9 @@ const OrderTracking = () => {
       </div>
     )
   }
-  
+
   const currentStep = getCurrentStepIndex()
-  
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -341,9 +375,9 @@ const OrderTracking = () => {
             <Button variant="ghost" size="sm">← Back to Orders</Button>
           </Link>
         </div>
-        
+
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Order Tracking</h1>
-        
+
         {/* Tracking Number */}
         <Card className="mb-6">
           <div className="flex items-center justify-between">
@@ -371,21 +405,32 @@ const OrderTracking = () => {
                   Verifying payment...
                 </Badge>
               )}
-              {order.status === 'delivered' && 
-               (!order.returnRequest || order.returnRequest.status === 'none') && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  icon={RotateCcw}
-                  onClick={handleReturnRequest}
-                >
-                  Request Return
-                </Button>
-              )}
+              {!order.returnRequest || order.returnRequest.status === 'none' ? (
+                ['paid', 'approved', 'shipped', 'delivered'].includes(order.status) ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    icon={RotateCcw}
+                    onClick={handleReturnRequest}
+                  >
+                    {order.status === 'delivered' ? 'Request Return' : 'Request Refund'}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    icon={RotateCcw}
+                    disabled
+                    title="Refund available after payment"
+                  >
+                    Refund / Return Unavailable
+                  </Button>
+                )
+              ) : null}
             </div>
           </div>
         </Card>
-        
+
         {/* Status Timeline */}
         <Card className="mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Status</h2>
@@ -393,7 +438,7 @@ const OrderTracking = () => {
             {statusSteps.map((step, index) => {
               const isCompleted = index <= currentStep
               const isCurrent = index === currentStep
-              
+
               return (
                 <div key={step.key} className="flex items-start space-x-4">
                   <div className="flex-shrink-0 mt-1">
@@ -420,7 +465,7 @@ const OrderTracking = () => {
             })}
           </div>
         </Card>
-        
+
         {/* Order Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
@@ -434,7 +479,7 @@ const OrderTracking = () => {
               <p>{order.shippingAddress?.phone}</p>
             </div>
           </Card>
-          
+
           <Card>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
             <div className="space-y-2">
@@ -459,7 +504,7 @@ const OrderTracking = () => {
             </div>
           </Card>
         </div>
-        
+
         {/* Order Items */}
         {order.items && order.items.length > 0 && (
           <Card className="mt-6">
@@ -490,11 +535,10 @@ const OrderTracking = () => {
                                 {[...Array(5)].map((_, i) => (
                                   <Star
                                     key={i}
-                                    className={`h-4 w-4 ${
-                                      i < existingReview.rating
-                                        ? 'fill-yellow-400 text-yellow-400'
-                                        : 'text-gray-300'
-                                    }`}
+                                    className={`h-4 w-4 ${i < existingReview.rating
+                                      ? 'fill-yellow-400 text-yellow-400'
+                                      : 'text-gray-300'
+                                      }`}
                                   />
                                 ))}
                               </div>
@@ -542,7 +586,7 @@ const OrderTracking = () => {
               <h3 className="text-lg font-semibold text-gray-900">Return/Refund Status</h3>
               {getReturnStatusBadge()}
             </div>
-            
+
             <div className="space-y-4">
               {/* Request Details */}
               {order.returnRequest.reason && (
@@ -560,13 +604,12 @@ const OrderTracking = () => {
               {/* Status Timeline */}
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <div className={`w-3 h-3 rounded-full ${
-                    order.returnRequest.status === 'requested' || 
+                  <div className={`w-3 h-3 rounded-full ${order.returnRequest.status === 'requested' ||
                     order.returnRequest.status === 'approved' ||
                     order.returnRequest.status === 'returned' ||
                     order.returnRequest.status === 'refunded'
-                      ? 'bg-primary-600' : 'bg-gray-300'
-                  }`} />
+                    ? 'bg-primary-600' : 'bg-gray-300'
+                    }`} />
                   <span className="text-sm text-gray-600">Return Request Submitted</span>
                   {order.returnRequest.requestedAt && (
                     <span className="text-xs text-gray-400 ml-auto">
@@ -575,9 +618,9 @@ const OrderTracking = () => {
                   )}
                 </div>
 
-                {order.returnRequest.status === 'approved' || 
-                 order.returnRequest.status === 'returned' ||
-                 order.returnRequest.status === 'refunded' ? (
+                {order.returnRequest.status === 'approved' ||
+                  order.returnRequest.status === 'returned' ||
+                  order.returnRequest.status === 'refunded' ? (
                   <div className="flex items-center space-x-2 ml-4">
                     <div className="w-3 h-3 rounded-full bg-primary-600" />
                     <span className="text-sm text-gray-600">Return Approved</span>
@@ -589,8 +632,8 @@ const OrderTracking = () => {
                   </div>
                 ) : null}
 
-                {order.returnRequest.status === 'returned' || 
-                 order.returnRequest.status === 'refunded' ? (
+                {order.returnRequest.status === 'returned' ||
+                  order.returnRequest.status === 'refunded' ? (
                   <div className="flex items-center space-x-2 ml-4">
                     <div className="w-3 h-3 rounded-full bg-primary-600" />
                     <span className="text-sm text-gray-600">Item Returned</span>
@@ -699,11 +742,10 @@ const OrderTracking = () => {
                   className="focus:outline-none"
                 >
                   <Star
-                    className={`h-8 w-8 transition-colors ${
-                      star <= rating
-                        ? 'fill-yellow-400 text-yellow-400'
-                        : 'text-gray-300 hover:text-yellow-300'
-                    }`}
+                    className={`h-8 w-8 transition-colors ${star <= rating
+                      ? 'fill-yellow-400 text-yellow-400'
+                      : 'text-gray-300 hover:text-yellow-300'
+                      }`}
                   />
                 </button>
               ))}
@@ -753,8 +795,9 @@ const OrderTracking = () => {
         onClose={() => {
           setReturnModalOpen(false)
           setReturnReason('')
+          setReturnReasonType('')
         }}
-        title="Request Return/Refund"
+        title={`Request ${order?.status === 'delivered' ? 'Return' : 'Refund'}`}
       >
         <div className="space-y-4">
           <div>
@@ -765,15 +808,31 @@ const OrderTracking = () => {
               Total: {order && formatCurrency(order.total || 0)}
             </p>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Reason for Return/Refund *
+              Reason *
+            </label>
+            <select
+              value={returnReasonType}
+              onChange={(e) => setReturnReasonType(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            >
+              <option value="">Select a reason</option>
+              {order && getReasonsList(order.status).map(r => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Additional Details {returnReasonType !== 'Other' && '(Optional)'}
             </label>
             <textarea
               value={returnReason}
               onChange={(e) => setReturnReason(e.target.value)}
-              placeholder="Please explain why you want to return this order..."
+              placeholder="Provide more details about your request..."
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
@@ -785,6 +844,7 @@ const OrderTracking = () => {
               onClick={() => {
                 setReturnModalOpen(false)
                 setReturnReason('')
+                setReturnReasonType('')
               }}
             >
               Cancel
@@ -792,7 +852,7 @@ const OrderTracking = () => {
             <Button
               onClick={submitReturnRequest}
               loading={submittingReturn}
-              disabled={!returnReason.trim()}
+              disabled={!returnReasonType}
             >
               Submit Request
             </Button>

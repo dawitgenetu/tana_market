@@ -29,13 +29,13 @@ export const notifyOrderStatusChange = async (order, newStatus, userId = null) =
   if (!targetUserId) {
     targetUserId = order.user?._id || order.user
   }
-  
+
   // If still no user ID, skip notification
   if (!targetUserId) {
     console.warn('Cannot create notification: No user ID found for order', order._id)
     return null
   }
-  
+
   const notifications = {
     paid: {
       title: 'Payment Successful',
@@ -62,8 +62,28 @@ export const notifyOrderStatusChange = async (order, newStatus, userId = null) =
       message: `Your order ${order.trackingNumber || order._id} has been cancelled.`,
       link: `/orders/${order.trackingNumber || order._id}`,
     },
+    return_approved: {
+      title: 'Return Request Approved',
+      message: `Your return request for order ${order.trackingNumber || order._id} has been approved. Please ship the item back.`,
+      link: `/orders/${order.trackingNumber || order._id}`,
+    },
+    refunded: {
+      title: 'Refund Processed',
+      message: `Refund for your order ${order.trackingNumber || order._id} has been processed.`,
+      link: `/orders/${order.trackingNumber || order._id}`,
+    },
+    returned: {
+      title: 'Return Received',
+      message: `Your returned item for order ${order.trackingNumber || order._id} has been received.`,
+      link: `/orders/${order.trackingNumber || order._id}`,
+    },
+    return_rejected: {
+      title: 'Return Request Rejected',
+      message: `Your return request for order ${order.trackingNumber || order._id} has been rejected.`,
+      link: `/orders/${order.trackingNumber || order._id}`,
+    },
   }
-  
+
   const notification = notifications[newStatus]
   if (notification) {
     await createNotification(
@@ -84,7 +104,7 @@ export const notifyNewPaidOrder = async (order) => {
   // This would typically fetch all managers/admins
   // For now, we'll create a notification that can be assigned to managers
   // In a real system, you'd query for users with manager/admin roles
-  
+
   const notification = await createNotification(
     null, // Will be set when we have manager/admin user IDs
     'order_paid',
@@ -93,7 +113,7 @@ export const notifyNewPaidOrder = async (order) => {
     `/manager/orders`,
     { orderId: order._id.toString() }
   )
-  
+
   return notification
 }
 

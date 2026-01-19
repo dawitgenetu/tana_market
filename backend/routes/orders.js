@@ -34,10 +34,10 @@ router.post('/', authenticate, async (req, res) => {
 router.get('/tracking/:trackingNumber', authenticate, async (req, res) => {
   try {
     const { trackingNumber } = req.params
-    
+
     // Try to find by tracking number first, then by order ID
     let order = await Order.findOne({ trackingNumber })
-    
+
     if (!order) {
       // If not found by tracking number, try by order ID
       try {
@@ -46,14 +46,14 @@ router.get('/tracking/:trackingNumber', authenticate, async (req, res) => {
         // Invalid ObjectId format, order not found
       }
     }
-    
+
     if (!order) {
       return res.status(404).json({ message: 'Order not found' })
     }
-    
+
     await order.populate('items.product')
     await order.populate('user', 'name email')
-    
+
     res.json(order)
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -67,11 +67,12 @@ router.put('/:id/cancel', authenticate, async (req, res) => {
     if (!order || order.user.toString() !== req.user._id.toString()) {
       return res.status(404).json({ message: 'Order not found' })
     }
-    
-    if (!['pending', 'paid'].includes(order.status)) {
-      return res.status(400).json({ message: 'Cannot cancel this order' })
+
+    // Only allow cancelling orders that have not been paid yet
+    if (order.status !== 'pending') {
+      return res.status(400).json({ message: 'Only pending (unpaid) orders can be cancelled. Please use the return/refund option for paid orders.' })
     }
-    
+
     order.status = 'cancelled'
     await order.save()
     res.json(order)
@@ -85,33 +86,33 @@ router.post('/:id/return', authenticate, async (req, res) => {
   try {
     const { reason } = req.body
     const order = await Order.findById(req.params.id)
-    
+
     if (!order || order.user.toString() !== req.user._id.toString()) {
       return res.status(404).json({ message: 'Order not found' })
     }
-    
-    if (order.status !== 'delivered') {
-      return res.status(400).json({ message: 'Only delivered orders can be returned' })
+
+    if (!['paid', 'approved', 'shipped', 'delivered'].includes(order.status)) {
+      return res.status(400).json({ message: 'Only paid orders can be refunded/returned' })
     }
-    
+
     if (order.returnRequest.status !== 'none') {
       return res.status(400).json({ message: 'Return request already exists for this order' })
     }
-    
+
     if (!reason || reason.trim().length === 0) {
       return res.status(400).json({ message: 'Return reason is required' })
     }
-    
+
     order.returnRequest = {
       status: 'requested',
       reason: reason.trim(),
       requestedAt: new Date(),
     }
-    
+
     await order.save()
     await order.populate('items.product')
     await order.populate('user', 'name email')
-    
+
     res.json(order)
   } catch (error) {
     res.status(400).json({ message: error.message })
@@ -122,17 +123,17 @@ router.post('/:id/return', authenticate, async (req, res) => {
 router.get('/:id/return', authenticate, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
-    
+
     if (!order) {
       return res.status(404).json({ message: 'Order not found' })
     }
-    
+
     // Users can only see their own return requests, admins/managers can see all
-    if (order.user.toString() !== req.user._id.toString() && 
-        !['admin', 'manager'].includes(req.user.role)) {
+    if (order.user.toString() !== req.user._id.toString() &&
+      !['admin', 'manager'].includes(req.user.role)) {
       return res.status(403).json({ message: 'Access denied' })
     }
-    
+
     res.json({ returnRequest: order.returnRequest })
   } catch (error) {
     res.status(400).json({ message: error.message })

@@ -5,6 +5,7 @@ import Product from '../models/Product.js'
 import Order from '../models/Order.js'
 import Comment from '../models/Comment.js'
 import ActivityLog from '../models/ActivityLog.js'
+import { notifyOrderStatusChange } from '../utils/notifications.js'
 
 const router = express.Router()
 
@@ -26,16 +27,16 @@ router.get('/stats', async (req, res) => {
         .sort({ createdAt: -1 })
         .limit(5),
     ])
-    
+
     const totalRevenue = await Order.aggregate([
       { $match: { status: { $in: ['paid', 'approved', 'shipped', 'delivered'] } } },
       { $group: { _id: null, total: { $sum: '$total' } } },
     ])
-    
+
     // Get real-time sales data for last 30 days
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    
+
     const salesData = await Order.aggregate([
       {
         $match: {
@@ -54,7 +55,7 @@ router.get('/stats', async (req, res) => {
       },
       { $sort: { _id: 1 } }
     ])
-    
+
     // Get today's sales
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -73,7 +74,7 @@ router.get('/stats', async (req, res) => {
         }
       }
     ])
-    
+
     // Get delivery time statistics
     const deliveryStats = await Order.aggregate([
       {
@@ -92,7 +93,7 @@ router.get('/stats', async (req, res) => {
         }
       }
     ])
-    
+
     res.json({
       totalUsers,
       totalProducts,
@@ -184,27 +185,27 @@ router.put('/comments/:id/approve', async (req, res) => {
       { status: 'approved' },
       { new: true }
     ).populate('product')
-    
+
     if (!comment) {
       return res.status(404).json({ message: 'Comment not found' })
     }
-    
+
     // Update product rating
     const reviews = await Comment.find({
       product: comment.product._id,
       status: 'approved',
     })
-    
+
     if (reviews.length > 0) {
       const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
       const averageRating = totalRating / reviews.length
-      
+
       await Product.findByIdAndUpdate(comment.product._id, {
         rating: Math.round(averageRating * 10) / 10,
         reviewCount: reviews.length,
       })
     }
-    
+
     res.json(comment)
   } catch (error) {
     res.status(400).json({ message: error.message })
@@ -219,21 +220,21 @@ router.put('/comments/:id/reject', async (req, res) => {
       { status: 'rejected' },
       { new: true }
     ).populate('product')
-    
+
     if (!comment) {
       return res.status(404).json({ message: 'Comment not found' })
     }
-    
+
     // Update product rating (remove this review from calculation)
     const reviews = await Comment.find({
       product: comment.product._id,
       status: 'approved',
     })
-    
+
     if (reviews.length > 0) {
       const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
       const averageRating = totalRating / reviews.length
-      
+
       await Product.findByIdAndUpdate(comment.product._id, {
         rating: Math.round(averageRating * 10) / 10,
         reviewCount: reviews.length,
@@ -244,7 +245,7 @@ router.put('/comments/:id/reject', async (req, res) => {
         reviewCount: 0,
       })
     }
-    
+
     res.json(comment)
   } catch (error) {
     res.status(400).json({ message: error.message })
@@ -411,22 +412,29 @@ router.get('/returns', async (req, res) => {
 router.put('/returns/:orderId/approve', async (req, res) => {
   try {
     const order = await Order.findById(req.params.orderId).populate('user', 'name email')
-    
+
     if (!order) {
       return res.status(404).json({ message: 'Order not found' })
     }
-    
+
     if (order.returnRequest.status !== 'requested') {
       return res.status(400).json({ message: 'Return request is not in requested status' })
     }
-    
+
     order.returnRequest.status = 'approved'
     order.returnRequest.approvedAt = new Date()
     order.returnRequest.processedBy = req.user._id
-    
+
     await order.save()
     await order.populate('items.product')
-    
+
+    // Notify customer
+    try {
+      await notifyOrderStatusChange(order, 'return_approved', order.user._id)
+    } catch (notifyError) {
+      console.error('Error sending notification:', notifyError)
+    }
+
     res.json(order)
   } catch (error) {
     res.status(400).json({ message: error.message })
@@ -438,23 +446,23 @@ router.put('/returns/:orderId/reject', async (req, res) => {
   try {
     const { rejectionReason } = req.body
     const order = await Order.findById(req.params.orderId).populate('user', 'name email')
-    
+
     if (!order) {
       return res.status(404).json({ message: 'Order not found' })
     }
-    
+
     if (order.returnRequest.status !== 'requested') {
       return res.status(400).json({ message: 'Return request is not in requested status' })
     }
-    
+
     order.returnRequest.status = 'rejected'
     order.returnRequest.rejectedAt = new Date()
     order.returnRequest.rejectionReason = rejectionReason || 'Return request rejected'
     order.returnRequest.processedBy = req.user._id
-    
+
     await order.save()
     await order.populate('items.product')
-    
+
     res.json(order)
   } catch (error) {
     res.status(400).json({ message: error.message })
@@ -466,27 +474,32 @@ router.put('/returns/:orderId/refund', async (req, res) => {
   try {
     const { refundAmount, refundReference } = req.body
     const order = await Order.findById(req.params.orderId).populate('user', 'name email')
-    
+
     if (!order) {
       return res.status(404).json({ message: 'Order not found' })
     }
-    
+
     if (order.returnRequest.status !== 'approved') {
       return res.status(400).json({ message: 'Return must be approved before processing refund' })
     }
-    
+
     const refund = refundAmount || order.total
-    
+
     order.returnRequest.status = 'refunded'
     order.returnRequest.returnedAt = new Date()
     order.returnRequest.refundedAt = new Date()
     order.returnRequest.refundAmount = refund
     order.returnRequest.refundReference = refundReference || `REF-${Date.now()}`
     order.returnRequest.processedBy = req.user._id
-    
+
+    // If order hasn't been shipped/delivered yet, cancel it to prevent shipping
+    if (['paid', 'approved'].includes(order.status)) {
+      order.status = 'cancelled'
+    }
+
     await order.save()
     await order.populate('items.product')
-    
+
     res.json(order)
   } catch (error) {
     res.status(400).json({ message: error.message })

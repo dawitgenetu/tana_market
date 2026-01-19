@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Mail, Phone, MapPin, Send, MessageSquare, Clock, User } from 'lucide-react'
+import { Mail, Phone, MapPin, Send, MessageSquare, Clock, User, ShoppingBag } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -192,6 +193,27 @@ const Contact = () => {
               </form>
             </Card>
           </div>
+        </div>
+
+        {/* Browse Products CTA */}
+        <div className="mt-12 text-center">
+          <Card className="bg-gradient-to-br from-primary-50 to-teal-50">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Looking for Products?</h3>
+              <p className="text-gray-600 mb-6">
+                Browse our wide selection of quality products and start shopping today
+              </p>
+              <Link to="/products">
+                <Button size="lg" icon={ShoppingBag}>
+                  Browse Products
+                </Button>
+              </Link>
+            </motion.div>
+          </Card>
         </div>
       </div>
     </div>

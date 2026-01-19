@@ -174,6 +174,8 @@ const NotificationItem = ({
 }) => {
   const Icon = getIcon(notification.type)
   const colorClass = getColor(notification.type)
+  const hasDistinctMessage =
+    notification.message && notification.message !== notification.title
 
   return (
     <motion.div
@@ -202,7 +204,9 @@ const NotificationItem = ({
                   <span className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-1.5"></span>
                 )}
               </div>
-              <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+              {hasDistinctMessage && (
+                <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+              )}
               <p className="text-xs text-gray-400 mt-2">
                 {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
               </p>
@@ -224,7 +228,9 @@ const NotificationItem = ({
                   <span className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-1.5"></span>
                 )}
               </div>
-              <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+              {hasDistinctMessage && (
+                <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+              )}
               <p className="text-xs text-gray-400 mt-2">
                 {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
               </p>
