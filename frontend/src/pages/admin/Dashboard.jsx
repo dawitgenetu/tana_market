@@ -18,9 +18,9 @@ const AdminDashboard = () => {
     todaySales: 0,
     todayOrders: 0,
     deliveryStats: {
-      avgDeliveryTime: 1440,
-      minDeliveryTime: 2,
-      maxDeliveryTime: 14400,
+      avgDeliveryTime: 1,
+      minDeliveryTime: 1,
+      maxDeliveryTime: 3,
       totalOrders: 0
     }
   })
@@ -127,10 +127,10 @@ const AdminDashboard = () => {
             <div>
               <p className="text-sm text-gray-600 mb-1">Avg Delivery Time</p>
               <p className="text-2xl font-bold text-gray-900">
-                {formatDeliveryTime(Math.round(stats.deliveryStats?.avgDeliveryTime || 1440))}
+                {formatDeliveryTime(Math.round(stats.deliveryStats?.avgDeliveryTime || 1))}
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                Range: {formatDeliveryTime(stats.deliveryStats?.minDeliveryTime || 2)} - {formatDeliveryTime(stats.deliveryStats?.maxDeliveryTime || 14400)}
+                Range: {formatDeliveryTime(stats.deliveryStats?.minDeliveryTime || 1)} - {formatDeliveryTime(stats.deliveryStats?.maxDeliveryTime || 3)}
               </p>
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">

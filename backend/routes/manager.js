@@ -35,12 +35,23 @@ router.get('/stats', async (req, res) => {
 // Get orders (only paid orders)
 router.get('/orders', async (req, res) => {
   try {
-    const orders = await Order.find({
+    let orders = await Order.find({
       status: { $in: ['paid', 'approved', 'shipped', 'delivered'] }
     })
       .populate('user', 'name email')
       .populate('items.product')
       .sort({ createdAt: -1 })
+
+    // Auto-mark as delivered where delivery time has passed
+    orders = await Promise.all(
+      orders.map(order => order.autoMarkDeliveredIfDue())
+    )
+
+    // Notify when auto-delivered
+    await Promise.all(orders
+      .filter(order => order._wasAutoDelivered)
+      .map(order => notifyOrderStatusChange(order, 'delivered', order.user?._id)))
+
     res.json(orders)
   } catch (error) {
     res.status(500).json({ message: error.message })

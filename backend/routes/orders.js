@@ -1,15 +1,28 @@
 import express from 'express'
 import Order from '../models/Order.js'
+import User from '../models/User.js'
 import { authenticate } from '../middleware/auth.js'
+import { notifyOrderStatusChange, createNotification } from '../utils/notifications.js'
 
 const router = express.Router()
 
 // Get user orders
 router.get('/', authenticate, async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user._id })
+    let orders = await Order.find({ user: req.user._id })
       .populate('items.product')
       .sort({ createdAt: -1 })
+
+    // Auto-mark as delivered where delivery time has passed
+    orders = await Promise.all(
+      orders.map(order => order.autoMarkDeliveredIfDue())
+    )
+
+    // Notify when auto-delivered
+    await Promise.all(orders
+      .filter(order => order._wasAutoDelivered)
+      .map(order => notifyOrderStatusChange(order, 'delivered', req.user._id)))
+
     res.json(orders)
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -51,6 +64,13 @@ router.get('/tracking/:trackingNumber', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Order not found' })
     }
 
+    // Auto-mark as delivered where delivery time has passed
+    order = await order.autoMarkDeliveredIfDue()
+
+    if (order._wasAutoDelivered) {
+      await notifyOrderStatusChange(order, 'delivered', order.user?._id || req.user._id)
+    }
+
     await order.populate('items.product')
     await order.populate('user', 'name email')
 
@@ -73,9 +93,8 @@ router.put('/:id/cancel', authenticate, async (req, res) => {
       return res.status(400).json({ message: 'Only pending (unpaid) orders can be cancelled. Please use the return/refund option for paid orders.' })
     }
 
-    order.status = 'cancelled'
-    await order.save()
-    res.json(order)
+    await Order.deleteOne({ _id: order._id })
+    res.json({ message: 'Order cancelled and removed' })
   } catch (error) {
     res.status(400).json({ message: error.message })
   }
@@ -112,6 +131,34 @@ router.post('/:id/return', authenticate, async (req, res) => {
     await order.save()
     await order.populate('items.product')
     await order.populate('user', 'name email')
+
+    // Notify admins/managers about new return/refund request
+    try {
+      const staffUsers = await User.find({
+        role: { $in: ['admin', 'manager'] },
+        isActive: true,
+      }).select('_id')
+
+      const isDelivered = order.status === 'delivered'
+      const actionLabel = isDelivered ? 'return' : 'refund'
+      const title = `New ${actionLabel} request`
+      const message = `${order.user?.name || 'A customer'} requested a ${actionLabel} for order ${order.trackingNumber || order._id}.`
+
+      await Promise.all(
+        staffUsers.map((staff) =>
+          createNotification(
+            staff._id,
+            'order_return_requested',
+            title,
+            message,
+            '/admin/returns',
+            { orderId: order._id.toString() }
+          )
+        )
+      )
+    } catch (notifyError) {
+      console.error('Error notifying admins about return request:', notifyError)
+    }
 
     res.json(order)
   } catch (error) {

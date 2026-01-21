@@ -42,7 +42,7 @@ const commentSchema = new mongoose.Schema({
   timestamps: true,
 })
 
-// Ensure one review per user per product per order
-commentSchema.index({ user: 1, product: 1, order: 1 }, { unique: true })
+// Ensure one review per user per product (across all orders)
+commentSchema.index({ user: 1, product: 1 }, { unique: true })
 
 export default mongoose.model('Comment', commentSchema)

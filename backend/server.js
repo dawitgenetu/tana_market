@@ -4,6 +4,9 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import Product from './models/Product.js'
+import Order from './models/Order.js'
+import User from './models/User.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -42,15 +45,26 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/manager', managerRoutes)
 app.use('/api/notifications', notificationRoutes)
 
-// Stats endpoint
+// Public stats endpoint used on customer home page (read-only aggregate data)
 app.get('/api/stats', async (req, res) => {
   try {
+    const [totalProducts, totalOrders, uniqueCustomerIds] = await Promise.all([
+      Product.countDocuments(),
+      Order.countDocuments({
+        status: { $in: ['paid', 'approved', 'shipped', 'delivered'] },
+      }),
+      Order.distinct('user', {
+        status: { $in: ['paid', 'approved', 'shipped', 'delivered'] },
+      }),
+    ])
+
     res.json({
-      totalProducts: 0,
-      totalOrders: 0,
-      happyCustomers: 0,
+      totalProducts,
+      totalOrders,
+      happyCustomers: uniqueCustomerIds.length,
     })
   } catch (error) {
+    console.error('Error fetching stats:', error)
     res.status(500).json({ message: 'Error fetching stats' })
   }
 })

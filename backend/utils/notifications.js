@@ -5,13 +5,41 @@ import Notification from '../models/Notification.js'
  */
 export const createNotification = async (userId, type, title, message, link = null, metadata = {}) => {
   try {
+    const normalizedMetadata = { ...metadata }
+    if (metadata?.orderId) {
+      normalizedMetadata.orderId = metadata.orderId.toString()
+    }
+
+    // De-duplicate: if a notification with same user/type/orderId exists, update it instead
+    const dedupeQuery = {
+      user: userId,
+      type,
+    }
+    if (normalizedMetadata.orderId) {
+      dedupeQuery['metadata.orderId'] = normalizedMetadata.orderId
+    }
+
+    const existing = normalizedMetadata.orderId
+      ? await Notification.findOne(dedupeQuery)
+      : null
+
+    if (existing) {
+      existing.title = title
+      existing.message = message
+      existing.link = link
+      existing.metadata = normalizedMetadata
+      existing.read = false
+      await existing.save()
+      return existing
+    }
+
     const notification = await Notification.create({
       user: userId,
       type,
       title,
       message,
       link,
-      metadata,
+      metadata: normalizedMetadata,
     })
     return notification
   } catch (error) {

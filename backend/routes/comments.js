@@ -69,40 +69,49 @@ router.get('/products/:productId/my-review', authenticate, async (req, res) => {
   }
 })
 
-// Check if user can review a product (has delivered orders with this product)
+// Check if user can review a product:
+// - Must have at least one delivered order containing the product
+// - Must not have already reviewed this product
 router.get('/products/:productId/can-review', authenticate, async (req, res) => {
   try {
-    // Find delivered orders that contain this product
-    const orders = await Order.find({
+    const productId = req.params.productId
+
+    // Has the user already reviewed this product?
+    const existingReview = await Comment.findOne({
+      user: req.user._id,
+      product: productId,
+    }).select('_id')
+
+    // Find a delivered order that contains this product
+    const deliveredOrder = await Order.findOne({
       user: req.user._id,
       status: 'delivered',
-      'items.product': req.params.productId,
-    }).select('_id trackingNumber items')
-    
-    if (orders.length === 0) {
-      return res.json({ canReview: false, orders: [] })
+      'items.product': productId,
+    }).select('_id trackingNumber')
+
+    if (!deliveredOrder) {
+      return res.json({
+        canReview: false,
+        orders: [],
+        hasReviewed: !!existingReview,
+      })
     }
-    
-    // Get existing reviews for this product by this user
-    const existingReviews = await Comment.find({
-      user: req.user._id,
-      product: req.params.productId,
-    }).select('order')
-    
-    const reviewedOrderIds = existingReviews.map(r => r.order.toString())
-    
-    // Filter orders that haven't been reviewed yet
-    const reviewableOrders = orders.filter(order => 
-      !reviewedOrderIds.includes(order._id.toString())
-    )
-    
-    res.json({
-      canReview: reviewableOrders.length > 0,
-      orders: reviewableOrders.map(order => ({
-        _id: order._id,
-        trackingNumber: order.trackingNumber,
-      })),
-      hasReviewed: existingReviews.length > 0,
+
+    if (existingReview) {
+      return res.json({
+        canReview: false,
+        orders: [],
+        hasReviewed: true,
+      })
+    }
+
+    return res.json({
+      canReview: true,
+      orders: [{
+        _id: deliveredOrder._id,
+        trackingNumber: deliveredOrder.trackingNumber,
+      }],
+      hasReviewed: false,
     })
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -152,16 +161,15 @@ router.post('/', authenticate, async (req, res) => {
       })
     }
     
-    // Check if review already exists for this order and product
+    // Check if review already exists for this user and product (any order)
     const existingReview = await Comment.findOne({
       user: req.user._id,
       product: productId,
-      order: orderId,
     })
     
     if (existingReview) {
       return res.status(400).json({ 
-        message: 'You have already reviewed this product for this order' 
+        message: 'You have already reviewed this product' 
       })
     }
     
@@ -183,7 +191,7 @@ router.post('/', authenticate, async (req, res) => {
   } catch (error) {
     if (error.code === 11000) {
       return res.status(400).json({ 
-        message: 'You have already reviewed this product for this order' 
+        message: 'You have already reviewed this product' 
       })
     }
     res.status(400).json({ message: error.message })

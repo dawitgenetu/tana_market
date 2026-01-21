@@ -45,10 +45,10 @@ const orderSchema = new mongoose.Schema({
     type: String,
   },
   estimatedDeliveryTime: {
-    type: Number, // in minutes (2 minutes to 10 days = 14400 minutes)
-    default: 1440, // Default 24 hours (1 day)
-    min: 2,
-    max: 14400, // 10 days
+    type: Number, // in minutes (1 to 3 minutes max)
+    default: 1,
+    min: 1,
+    max: 3,
   },
   deliveryTimeSetBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -99,6 +99,45 @@ const orderSchema = new mongoose.Schema({
 }, {
   timestamps: true,
 })
+
+// Helper: automatically mark order as delivered when estimated delivery time has passed
+orderSchema.methods.autoMarkDeliveredIfDue = async function () {
+  try {
+    // Skip if already delivered or cancelled
+    if (['delivered', 'cancelled'].includes(this.status)) {
+      return this
+    }
+
+    // Need an estimated delivery time to calculate
+    if (!this.estimatedDeliveryTime) {
+      return this
+    }
+
+    // Use the time when delivery was set if available, otherwise fall back
+    const baseTime = this.deliveryTimeSetAt || this.updatedAt || this.createdAt
+    if (!baseTime) {
+      return this
+    }
+
+    const expectedAt = new Date(baseTime.getTime() + (this.estimatedDeliveryTime * 60 * 1000))
+    const now = new Date()
+
+    // Only auto-complete orders that have progressed beyond "pending"
+    if (now >= expectedAt && ['paid', 'approved', 'shipped'].includes(this.status)) {
+      this.status = 'delivered'
+      this._wasAutoDelivered = true // transient flag for callers
+      await this.save()
+    } else {
+      this._wasAutoDelivered = false
+    }
+
+    return this
+  } catch (err) {
+    // Fail-safe: never break the caller because of auto-update issues
+    console.error('autoMarkDeliveredIfDue error for order', this._id, err)
+    return this
+  }
+}
 
 // Generate tracking number only when order is paid
 orderSchema.pre('save', async function(next) {

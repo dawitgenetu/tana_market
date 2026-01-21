@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle, XCircle, Truck, Clock, Edit } from 'lucide-react'
+import { CheckCircle, Truck, Clock } from 'lucide-react'
 import { formatCurrency } from '../../utils/currency'
 import api from '../../utils/api'
 import { toast } from 'react-hot-toast'
@@ -8,16 +8,10 @@ import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import Loading from '../../components/ui/Loading'
 import Badge from '../../components/ui/Badge'
-import Modal from '../../components/ui/Modal'
-import Input from '../../components/ui/Input'
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
-  const [deliveryTimeModalOpen, setDeliveryTimeModalOpen] = useState(false)
-  const [selectedOrder, setSelectedOrder] = useState(null)
-  const [deliveryTime, setDeliveryTime] = useState(1440) // Default 24 hours
-  const [submitting, setSubmitting] = useState(false)
   
   useEffect(() => {
     fetchOrders()
@@ -53,34 +47,6 @@ const AdminOrders = () => {
     } catch (error) {
       console.error('Ship order error:', error)
       toast.error(error.response?.data?.message || 'Failed to update order')
-    }
-  }
-  
-  const handleSetDeliveryTime = (order) => {
-    setSelectedOrder(order)
-    setDeliveryTime(order.estimatedDeliveryTime || 1440)
-    setDeliveryTimeModalOpen(true)
-  }
-  
-  const submitDeliveryTime = async () => {
-    if (deliveryTime < 2 || deliveryTime > 14400) {
-      toast.error('Delivery time must be between 2 minutes and 14400 minutes (10 days)')
-      return
-    }
-    
-    setSubmitting(true)
-    try {
-      await api.put(`/admin/orders/${selectedOrder._id}/delivery-time`, {
-        deliveryTime: parseInt(deliveryTime)
-      })
-      toast.success('Delivery time updated successfully')
-      setDeliveryTimeModalOpen(false)
-      setSelectedOrder(null)
-      fetchOrders()
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update delivery time')
-    } finally {
-      setSubmitting(false)
     }
   }
   
@@ -182,16 +148,6 @@ const AdminOrders = () => {
                       Mark as Shipped
                     </Button>
                   )}
-                  {order.status !== 'delivered' && order.status !== 'cancelled' && (
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => handleSetDeliveryTime(order)} 
-                      icon={Clock}
-                    >
-                      {order.estimatedDeliveryTime ? 'Update Delivery Time' : 'Set Delivery Time'}
-                    </Button>
-                  )}
                   {order.status === 'shipped' && (
                     <Badge variant="info">Shipped - Awaiting Delivery</Badge>
                   )}
@@ -204,56 +160,6 @@ const AdminOrders = () => {
           ))}
         </div>
       )}
-      
-      {/* Delivery Time Modal */}
-      <Modal
-        isOpen={deliveryTimeModalOpen}
-        onClose={() => {
-          setDeliveryTimeModalOpen(false)
-          setSelectedOrder(null)
-        }}
-        title="Set Delivery Time"
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="label">Delivery Time (in minutes)</label>
-            <Input
-              type="number"
-              min="2"
-              max="14400"
-              value={deliveryTime}
-              onChange={(e) => setDeliveryTime(e.target.value)}
-              placeholder="Enter delivery time in minutes (2-14400)"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Range: 2 minutes to 14400 minutes (10 days)
-            </p>
-            <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-700">Preview:</p>
-              <p className="text-sm text-gray-600">{formatDeliveryTime(parseInt(deliveryTime) || 0)}</p>
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDeliveryTimeModalOpen(false)
-                setSelectedOrder(null)
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={submitDeliveryTime}
-              loading={submitting}
-              disabled={!deliveryTime || deliveryTime < 2 || deliveryTime > 14400}
-            >
-              Set Delivery Time
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   )
 }

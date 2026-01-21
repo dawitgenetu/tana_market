@@ -108,9 +108,9 @@ router.get('/stats', async (req, res) => {
       todaySales: todaySales[0]?.sales || 0,
       todayOrders: todaySales[0]?.orders || 0,
       deliveryStats: deliveryStats[0] || {
-        avgDeliveryTime: 1440,
-        minDeliveryTime: 2,
-        maxDeliveryTime: 14400,
+        avgDeliveryTime: 1,
+        minDeliveryTime: 1,
+        maxDeliveryTime: 3,
         totalOrders: 0
       }
     })
@@ -152,12 +152,23 @@ router.delete('/users/:id', async (req, res) => {
 // Get all orders (only paid orders)
 router.get('/orders', async (req, res) => {
   try {
-    const orders = await Order.find({
+    let orders = await Order.find({
       status: { $in: ['paid', 'approved', 'shipped', 'delivered'] }
     })
       .populate('user', 'name email')
       .populate('items.product')
       .sort({ createdAt: -1 })
+
+    // Auto-mark as delivered where delivery time has passed
+    orders = await Promise.all(
+      orders.map(order => order.autoMarkDeliveredIfDue())
+    )
+
+    // Notify when auto-delivered
+    await Promise.all(orders
+      .filter(order => order._wasAutoDelivered)
+      .map(order => notifyOrderStatusChange(order, 'delivered', order.user?._id)))
+
     res.json(orders)
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -463,6 +474,8 @@ router.put('/returns/:orderId/reject', async (req, res) => {
     await order.save()
     await order.populate('items.product')
 
+    await notifyOrderStatusChange(order, 'return_rejected', order.user._id)
+
     res.json(order)
   } catch (error) {
     res.status(400).json({ message: error.message })
@@ -499,6 +512,8 @@ router.put('/returns/:orderId/refund', async (req, res) => {
 
     await order.save()
     await order.populate('items.product')
+
+    await notifyOrderStatusChange(order, 'refunded', order.user._id)
 
     res.json(order)
   } catch (error) {

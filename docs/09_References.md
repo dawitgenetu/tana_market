@@ -1,0 +1,11 @@
+## References
+- Pressman, R. S., & Maxim, B. R. *Software Engineering: A Practitioner’s Approach*. McGraw-Hill.
+- Sommerville, I. *Software Engineering*. Pearson.
+- Gamma, E., Helm, R., Johnson, R., & Vlissides, J. *Design Patterns: Elements of Reusable Object-Oriented Software*. Addison-Wesley.
+- Node.js Foundation. *Node.js Documentation*. https://nodejs.org/en/docs
+- React Team. *React Documentation*. https://react.dev/
+- Vite. *Vite Guide*. https://vitejs.dev/guide/
+- MongoDB Inc. *MongoDB Manual*. https://www.mongodb.com/docs/
+- Express.js Foundation. *Express Guide*. https://expressjs.com/
+- Chapa. *Chapa API Documentation*. (for payment integration)
+- Recharts. *Recharts Documentation*. https://recharts.org/en-US/

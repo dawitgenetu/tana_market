@@ -28,6 +28,8 @@ const OrderTracking = () => {
   const [reviews, setReviews] = useState({})
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false)
   const [returnReasonType, setReturnReasonType] = useState('')
+  const [timeRemainingMs, setTimeRemainingMs] = useState(null)
+  const [expectedDeliveryReached, setExpectedDeliveryReached] = useState(false)
 
   const refundReasons = [
     "Changed my mind",
@@ -149,6 +151,30 @@ const OrderTracking = () => {
     if (order && order.status === 'delivered') {
       fetchReviews()
     }
+  }, [order])
+
+  // Track expected delivery countdown and mark as reached when time elapses
+  useEffect(() => {
+    if (!order || !order.estimatedDeliveryTime || ['delivered', 'cancelled'].includes(order.status)) {
+      setExpectedDeliveryReached(false)
+      setTimeRemainingMs(null)
+      return
+    }
+
+    const startTime = new Date(order.deliveryTimeSetAt || order.updatedAt || order.createdAt).getTime()
+    const expectedAt = startTime + (order.estimatedDeliveryTime * 60 * 1000)
+
+    const updateTime = () => {
+      const diff = expectedAt - Date.now()
+      setTimeRemainingMs(diff)
+      if (diff <= 0) {
+        setExpectedDeliveryReached(true)
+      }
+    }
+
+    updateTime()
+    const intervalId = setInterval(updateTime, 1000)
+    return () => clearInterval(intervalId)
   }, [order])
 
   // Auto-verify payment when order is loaded and is pending
@@ -336,10 +362,24 @@ const OrderTracking = () => {
     { key: 'delivered', label: 'Delivered' },
   ]
 
+  const displayStatus = expectedDeliveryReached && order && order.status !== 'cancelled'
+    ? 'delivered'
+    : order?.status
+
   const getCurrentStepIndex = () => {
     if (!order) return 0
-    const index = statusSteps.findIndex(step => step.key === order.status)
+    const index = statusSteps.findIndex(step => step.key === displayStatus)
     return index >= 0 ? index : 0
+  }
+
+  const formatRemainingTime = (ms) => {
+    if (ms == null) return ''
+    if (ms <= 0) return '0m'
+    const minutes = Math.ceil(ms / 60000)
+    if (minutes < 60) return `${minutes} min`
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
   }
 
   if (loading) {
@@ -387,17 +427,28 @@ const OrderTracking = () => {
               {order.paymentReference && (
                 <p className="text-xs text-gray-500 mt-1">Payment Ref: {order.paymentReference}</p>
               )}
-              {order.estimatedDeliveryTime && order.status !== 'delivered' && (
+              {order.estimatedDeliveryTime && displayStatus !== 'delivered' && (
                 <div className="flex items-center space-x-1 mt-2">
                   <Clock className="h-4 w-4 text-primary-600" />
                   <p className="text-sm text-gray-700">
                     Expected Delivery: {formatDeliveryTime(order.estimatedDeliveryTime)}
+                    {timeRemainingMs !== null && timeRemainingMs > 0 && (
+                      <> · ETA in {formatRemainingTime(timeRemainingMs)}</>
+                    )}
+                  </p>
+                </div>
+              )}
+              {displayStatus === 'delivered' && expectedDeliveryReached && (
+                <div className="flex items-center space-x-2 mt-2">
+                  <Clock className="h-4 w-4 text-green-600" />
+                  <p className="text-sm text-green-700">
+                    Expected delivery time reached — marked as delivered.
                   </p>
                 </div>
               )}
             </div>
             <div className="flex items-center space-x-3 flex-wrap gap-2">
-              <Badge variant="primary" size="lg">{order.status.toUpperCase()}</Badge>
+              <Badge variant="primary" size="lg">{displayStatus?.toUpperCase()}</Badge>
               {getReturnStatusBadge()}
               {/* Show verifying badge only when actually verifying */}
               {order.status === 'pending' && order.paymentReference && isVerifyingPayment && (
