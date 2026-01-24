@@ -32,7 +32,7 @@ const ProductDetail = () => {
   const [submittingReview, setSubmittingReview] = useState(false)
   const { addItem } = useCartStore()
   const { isAuthenticated, user } = useAuthStore()
-  
+
   useEffect(() => {
     fetchProduct()
     fetchReviews()
@@ -41,7 +41,7 @@ const ProductDetail = () => {
       fetchMyReview()
     }
   }, [id, isAuthenticated])
-  
+
   const fetchProduct = async () => {
     try {
       const response = await api.get(`/products/${id}`)
@@ -54,7 +54,7 @@ const ProductDetail = () => {
       setLoading(false)
     }
   }
-  
+
   const fetchReviews = async () => {
     try {
       const response = await api.get(`/products/${id}/reviews`)
@@ -63,7 +63,7 @@ const ProductDetail = () => {
       console.error('Error fetching reviews:', error)
     }
   }
-  
+
   const checkCanReview = async () => {
     try {
       const response = await api.get(`/comments/products/${id}/can-review`)
@@ -76,7 +76,7 @@ const ProductDetail = () => {
       console.error('Error checking review eligibility:', error)
     }
   }
-  
+
   const fetchMyReview = async () => {
     try {
       const response = await api.get(`/comments/products/${id}/my-review`)
@@ -86,7 +86,7 @@ const ProductDetail = () => {
       setMyReview(null)
     }
   }
-  
+
   const handleWriteReview = () => {
     if (!isAuthenticated) {
       toast.error('Please login to write a review')
@@ -100,18 +100,18 @@ const ProductDetail = () => {
     }
     setReviewModalOpen(true)
   }
-  
+
   const submitReview = async () => {
     if (!comment.trim()) {
       toast.error('Please write a comment')
       return
     }
-    
+
     if (!selectedOrderId) {
       toast.error('Please select an order')
       return
     }
-    
+
     setSubmittingReview(true)
     try {
       if (myReview) {
@@ -143,22 +143,22 @@ const ProductDetail = () => {
       setSubmittingReview(false)
     }
   }
-  
+
   const handleAddToCart = () => {
     if (!isAuthenticated) {
       toast.error('Please login to add items to cart')
       navigate('/login')
       return
     }
-    
+
     addItem(product, quantity)
     toast.success('Product added to cart!')
   }
-  
+
   const finalPrice = product?.discount > 0
     ? product.price * (1 - product.discount / 100)
     : product?.price || 0
-  
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -166,11 +166,11 @@ const ProductDetail = () => {
       </div>
     )
   }
-  
+
   if (!product) {
     return null
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -194,13 +194,12 @@ const ProductDetail = () => {
                     <button
                       key={index}
                       onClick={() => setSelectedImage(index)}
-                      className={`aspect-square rounded-lg overflow-hidden border-2 ${
-                        selectedImage === index ? 'border-primary-600' : 'border-transparent'
-                      }`}
+                      className={`aspect-square rounded-lg overflow-hidden border-2 ${selectedImage === index ? 'border-primary-600' : 'border-transparent'
+                        }`}
                     >
-                      <img 
-                        src={img || '/placeholder-product.jpg'} 
-                        alt={`${product.name} ${index + 1}`} 
+                      <img
+                        src={img || '/placeholder-product.jpg'}
+                        alt={`${product.name} ${index + 1}`}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.target.src = '/placeholder-product.jpg'
@@ -212,7 +211,7 @@ const ProductDetail = () => {
               )}
             </Card>
           </div>
-          
+
           {/* Product Info */}
           <div>
             <div className="mb-4">
@@ -225,11 +224,10 @@ const ProductDetail = () => {
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`h-5 w-5 ${
-                        i < Math.floor(product.rating || 0)
+                      className={`h-5 w-5 ${i < Math.floor(product.rating || 0)
                           ? 'text-yellow-400 fill-current'
                           : 'text-gray-300'
-                      }`}
+                        }`}
                     />
                   ))}
                   <span className="ml-2 text-sm text-gray-600">
@@ -238,7 +236,7 @@ const ProductDetail = () => {
                 </div>
               </div>
             </div>
-            
+
             <Card className="mb-6">
               <div className="mb-4">
                 {product.discount > 0 ? (
@@ -259,9 +257,9 @@ const ProductDetail = () => {
                   </span>
                 )}
               </div>
-              
+
               <p className="text-gray-700 mb-6 leading-relaxed">{product.description}</p>
-              
+
               <div className="space-y-4">
                 {/* Quantity */}
                 <div>
@@ -287,7 +285,7 @@ const ProductDetail = () => {
                     </span>
                   </div>
                 </div>
-                
+
                 {/* Actions */}
                 <div className="flex space-x-3">
                   <Button
@@ -308,7 +306,7 @@ const ProductDetail = () => {
             </Card>
           </div>
         </div>
-        
+
         {/* Reviews Section */}
         <Card>
           <div className="flex items-center justify-between mb-6">
@@ -334,7 +332,7 @@ const ProductDetail = () => {
               </Button>
             )}
           </div>
-          
+
           {reviews.length > 0 ? (
             <div className="space-y-6">
               {reviews.map((review) => (
@@ -351,11 +349,10 @@ const ProductDetail = () => {
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`h-4 w-4 ${
-                              i < review.rating
+                            className={`h-4 w-4 ${i < review.rating
                                 ? 'text-yellow-400 fill-current'
                                 : 'text-gray-300'
-                            }`}
+                              }`}
                           />
                         ))}
                         <span className="ml-2 text-sm text-gray-600">({review.rating}/5)</span>
@@ -389,7 +386,7 @@ const ProductDetail = () => {
             </div>
           )}
         </Card>
-        
+
         {/* Review Modal */}
         <Modal
           isOpen={reviewModalOpen}
@@ -419,7 +416,7 @@ const ProductDetail = () => {
                 </select>
               </div>
             )}
-            
+
             <div>
               <label className="label">Rating *</label>
               <div className="flex items-center space-x-2">
@@ -431,18 +428,17 @@ const ProductDetail = () => {
                     className="focus:outline-none"
                   >
                     <Star
-                      className={`h-8 w-8 transition-colors ${
-                        star <= rating
+                      className={`h-8 w-8 transition-colors ${star <= rating
                           ? 'fill-yellow-400 text-yellow-400'
                           : 'text-gray-300 hover:text-yellow-300'
-                      }`}
+                        }`}
                     />
                   </button>
                 ))}
                 <span className="ml-2 text-sm text-gray-600">{rating} out of 5</span>
               </div>
             </div>
-            
+
             <div>
               <label className="label">Your Review *</label>
               <textarea
@@ -453,7 +449,7 @@ const ProductDetail = () => {
                 className="input"
               />
             </div>
-            
+
             <div className="flex justify-end space-x-3 pt-4">
               <Button
                 variant="outline"

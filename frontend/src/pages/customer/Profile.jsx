@@ -17,11 +17,11 @@ const Profile = () => {
     phone: user?.phone || '',
     address: user?.address || '',
   })
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-    
+
     try {
       const response = await api.put('/users/profile', formData)
       updateUser(response.data)
@@ -32,12 +32,12 @@ const Profile = () => {
       setLoading(false)
     }
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">My Profile</h1>
-        
+
         <form onSubmit={handleSubmit}>
           <Card>
             <div className="flex items-center space-x-4 mb-6">
@@ -54,7 +54,7 @@ const Profile = () => {
                 )}
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <Input
                 label="Full Name"
@@ -63,7 +63,7 @@ const Profile = () => {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
-              
+
               <Input
                 type="email"
                 label="Email Address"
@@ -73,22 +73,27 @@ const Profile = () => {
                 required
                 disabled
               />
-              
+
               <Input
                 type="tel"
                 label="Phone Number"
                 icon={Phone}
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || /^\d*$/.test(value)) {
+                    setFormData({ ...formData, phone: value });
+                  }
+                }}
               />
-              
+
               <Input
                 label="Address"
                 icon={MapPin}
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               />
-              
+
               <div className="pt-4">
                 <Button type="submit" loading={loading} icon={Save}>
                   Save Changes

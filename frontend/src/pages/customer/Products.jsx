@@ -25,7 +25,7 @@ const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all')
   const [categories] = useState(PRODUCT_CATEGORIES) // Use predefined categories
   const [viewMode, setViewMode] = useState('grid')
-  
+
   const handleAddToCart = (product, e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -37,7 +37,7 @@ const Products = () => {
     addItem(product, 1)
     toast.success('Product added to cart!')
   }
-  
+
   const handleBuyNow = (product, e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -49,7 +49,7 @@ const Products = () => {
     addItem(product, 1)
     navigate('/checkout')
   }
-  
+
   // Update URL when search or category changes
   useEffect(() => {
     const params = new URLSearchParams()
@@ -57,18 +57,31 @@ const Products = () => {
     if (selectedCategory !== 'all') params.set('category', selectedCategory)
     setSearchParams(params, { replace: true })
   }, [searchTerm, selectedCategory, setSearchParams])
-  
+
+  // Sync state from URL (e.g. when searching from Navbar)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || ''
+    const urlCategory = searchParams.get('category') || 'all'
+
+    if (urlSearch !== searchTerm) {
+      setSearchTerm(urlSearch)
+    }
+    if (urlCategory !== selectedCategory) {
+      setSelectedCategory(urlCategory)
+    }
+  }, [searchParams])
+
   useEffect(() => {
     fetchProducts()
   }, [selectedCategory, searchTerm])
-  
+
   const fetchProducts = async () => {
     try {
       setLoading(true)
       const params = {}
       if (selectedCategory !== 'all') params.category = selectedCategory
       if (searchTerm) params.search = searchTerm
-      
+
       const response = await api.get('/products', { params })
       setProducts(response.data.products || [])
     } catch (error) {
@@ -77,8 +90,8 @@ const Products = () => {
       setLoading(false)
     }
   }
-  
-  
+
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -87,7 +100,7 @@ const Products = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">All Products</h1>
           <p className="text-gray-600">Browse our complete product catalog</p>
         </div>
-        
+
         {/* Filters and Search */}
         <Card className="mb-6">
           <div className="flex flex-col md:flex-row gap-4">
@@ -102,7 +115,7 @@ const Products = () => {
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
-            
+
             {/* Category Filter */}
             <select
               value={selectedCategory}
@@ -121,7 +134,7 @@ const Products = () => {
                 )
               })}
             </select>
-            
+
             {/* View Mode */}
             <div className="flex items-center space-x-2 border border-gray-300 rounded-lg p-1">
               <button
@@ -139,7 +152,7 @@ const Products = () => {
             </div>
           </div>
         </Card>
-        
+
         {/* Products Grid */}
         {loading ? (
           <div className="flex justify-center py-12">
@@ -152,7 +165,7 @@ const Products = () => {
             description="Try adjusting your search or filters"
           />
         ) : (
-          <div className={viewMode === 'grid' 
+          <div className={viewMode === 'grid'
             ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
             : 'space-y-4'
           }>
@@ -205,14 +218,14 @@ const Products = () => {
                       )}
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
                         onClick={(e) => handleAddToCart(product, e)}
                         icon={ShoppingCart}
                         title="Add to Cart"
                       />
-                      <Button 
+                      <Button
                         size="sm"
                         onClick={(e) => handleBuyNow(product, e)}
                       >

@@ -155,11 +155,10 @@ const MyReviews = () => {
                               {[...Array(5)].map((_, i) => (
                                 <Star
                                   key={i}
-                                  className={`h-4 w-4 ${
-                                    i < review.rating
+                                  className={`h-4 w-4 ${i < review.rating
                                       ? 'fill-yellow-400 text-yellow-400'
                                       : 'text-gray-300'
-                                  }`}
+                                    }`}
                                 />
                               ))}
                             </div>
@@ -257,11 +256,10 @@ const MyReviews = () => {
                     className="focus:outline-none"
                   >
                     <Star
-                      className={`h-8 w-8 transition-colors ${
-                        star <= rating
+                      className={`h-8 w-8 transition-colors ${star <= rating
                           ? 'fill-yellow-400 text-yellow-400'
                           : 'text-gray-300 hover:text-yellow-300'
-                      }`}
+                        }`}
                     />
                   </button>
                 ))}

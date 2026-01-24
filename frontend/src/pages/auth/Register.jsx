@@ -106,9 +106,15 @@ const Register = () => {
             type="tel"
             label="Phone Number"
             icon={Phone}
-            placeholder="+251 9XX XXX XXX"
+            placeholder="09XXXXXXXX"
             value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Only allow numbers
+              if (/^\d*$/.test(value)) {
+                setFormData({ ...formData, phone: value });
+              }
+            }}
             required
           />
 

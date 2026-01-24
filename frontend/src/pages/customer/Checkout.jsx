@@ -23,37 +23,37 @@ const Checkout = () => {
     phone: user?.phone || '',
     notes: '',
   })
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-    
+
     try {
       // Create order
       const orderData = {
         items: items.map(item => ({
           product: item._id,
           quantity: item.quantity,
-          price: item.discount > 0 
+          price: item.discount > 0
             ? item.price * (1 - item.discount / 100)
             : item.price,
         })),
         shippingAddress: shippingInfo,
         total,
       }
-      
+
       const response = await api.post('/orders', orderData)
       const order = response.data
-      
+
       // Initialize payment
       const paymentResponse = await api.post('/payments/initialize', {
         orderId: order._id,
         amount: total,
       })
-      
+
       // Clear cart after successful order creation
       clearCart()
-      
+
       // Redirect to Chapa payment
       if (paymentResponse.data.checkout_url) {
         window.location.href = paymentResponse.data.checkout_url
@@ -67,7 +67,7 @@ const Checkout = () => {
       setLoading(false)
     }
   }
-  
+
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 py-12 flex items-center justify-center">
@@ -78,12 +78,12 @@ const Checkout = () => {
       </div>
     )
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Shipping Information */}
@@ -93,7 +93,7 @@ const Checkout = () => {
                   <MapPin className="h-5 w-5 text-primary-600" />
                   <h2 className="text-xl font-semibold text-gray-900">Shipping Information</h2>
                 </div>
-                
+
                 <div className="space-y-4">
                   <Input
                     label="Full Address"
@@ -102,7 +102,7 @@ const Checkout = () => {
                     onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value })}
                     required
                   />
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input
                       label="City (Only Bahir Dar Supported)"
@@ -119,14 +119,17 @@ const Checkout = () => {
                       onChange={(e) => {
                         // Allow editing only if no phone is set from profile
                         if (!user?.phone) {
-                          setShippingInfo({ ...shippingInfo, phone: e.target.value })
+                          const value = e.target.value;
+                          if (value === '' || /^\d*$/.test(value)) {
+                            setShippingInfo({ ...shippingInfo, phone: value })
+                          }
                         }
                       }}
                       readOnly={!!user?.phone}
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <label className="label">Delivery Notes (Optional)</label>
                     <textarea
@@ -138,7 +141,7 @@ const Checkout = () => {
                   </div>
                 </div>
               </Card>
-              
+
               <Card>
                 <div className="flex items-center space-x-2 mb-6">
                   <CreditCard className="h-5 w-5 text-primary-600" />
@@ -151,18 +154,18 @@ const Checkout = () => {
                 </div>
               </Card>
             </div>
-            
+
             {/* Order Summary */}
             <div className="lg:col-span-1">
               <Card className="sticky top-24">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
-                
+
                 <div className="space-y-3 mb-6">
                   {items.map((item) => {
                     const itemPrice = item.discount > 0
                       ? item.price * (1 - item.discount / 100)
                       : item.price
-                    
+
                     return (
                       <div key={item._id} className="flex items-start justify-between">
                         <div className="flex-1">
@@ -176,7 +179,7 @@ const Checkout = () => {
                     )
                   })}
                 </div>
-                
+
                 <div className="border-t border-gray-200 pt-4 space-y-2 mb-6">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
@@ -193,7 +196,7 @@ const Checkout = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <Button
                   type="submit"
                   className="w-full"

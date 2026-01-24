@@ -21,11 +21,11 @@ const AdminUsers = () => {
     role: 'customer',
     password: '',
   })
-  
+
   useEffect(() => {
     fetchUsers()
   }, [])
-  
+
   const fetchUsers = async () => {
     try {
       const response = await api.get('/admin/users')
@@ -36,7 +36,7 @@ const AdminUsers = () => {
       setLoading(false)
     }
   }
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
@@ -49,10 +49,10 @@ const AdminUsers = () => {
       toast.error(error.response?.data?.message || 'Failed to create user')
     }
   }
-  
+
   const handleDelete = async (userId) => {
     if (!window.confirm('Are you sure you want to delete this user?')) return
-    
+
     try {
       await api.delete(`/admin/users/${userId}`)
       toast.success('User deleted successfully')
@@ -61,7 +61,7 @@ const AdminUsers = () => {
       toast.error('Failed to delete user')
     }
   }
-  
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -71,7 +71,7 @@ const AdminUsers = () => {
       password: '',
     })
   }
-  
+
   const getRoleBadge = (role) => {
     const roleMap = {
       admin: { variant: 'danger', label: 'Admin' },
@@ -81,7 +81,7 @@ const AdminUsers = () => {
     const roleInfo = roleMap[role] || { variant: 'gray', label: role }
     return <Badge variant={roleInfo.variant}>{roleInfo.label}</Badge>
   }
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -89,7 +89,7 @@ const AdminUsers = () => {
       </div>
     )
   }
-  
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -101,7 +101,7 @@ const AdminUsers = () => {
           Add User
         </Button>
       </div>
-      
+
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -134,7 +134,7 @@ const AdminUsers = () => {
           </table>
         </div>
       </Card>
-      
+
       <Modal
         isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); resetForm(); }}
@@ -158,7 +158,12 @@ const AdminUsers = () => {
             type="tel"
             label="Phone"
             value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === '' || /^\d*$/.test(value)) {
+                setFormData({ ...formData, phone: value });
+              }
+            }}
           />
           <div>
             <label className="label">Role</label>

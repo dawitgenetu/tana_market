@@ -1,0 +1,43 @@
+classDiagram
+class User {
+-ObjectId _id
+-String name
+-String email
+-String password
+-String role
++comparePassword(password:String): Boolean
+}
+
+class Product {
+-ObjectId _id
+-String name
+-String description
+-Number price
+-Number stock
+-String category
+-Boolean isActive
++checkStock(quantity:Number): Boolean
+}
+
+class Order {
+-ObjectId _id
+-Number total
+-String status
+-String trackingNumber
++calculateTotal(): Number
+}
+
+class OrderItem {
+-Number quantity
+}
+
+class Comment {
+-Number rating
+-String comment
+}
+
+User "1" --> "0.." Order : places
+Order "1" --> "1.." OrderItem : contains
+OrderItem "1" --> "1" Product : references
+User "1" --> "0.." Comment : writes
+Product "1" --> "0.." Comment : receives

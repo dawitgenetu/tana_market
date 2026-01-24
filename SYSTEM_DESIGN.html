@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>System Design Document - Tana Market</title>
+    <style>
+        body {
+            font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 40px;
+            background-color: white;
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 28px;
+        }
+
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            font-size: 22px;
+        }
+
+        h3 {
+            color: #34495e;
+            margin-top: 25px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        h4 {
+            color: #4f5a63;
+            font-size: 16px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul,
+        ol {
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #f1f3f4;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        code {
+            background-color: #f4f6f7;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: #c7254e;
+        }
+
+        .diagram-container {
+            text-align: center;
+            margin: 30px 0;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #eee;
+        }
+
+        .diagram-container img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            /* Subtle border for images */
+        }
+
+        .figure-caption {
+            display: block;
+            margin-top: 10px;
+            color: #7f8c8d;
+            font-style: italic;
+            font-size: 14px;
+        }
+
+        .header-info {
+            text-align: center;
+            margin-bottom: 50px;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        /* Print optimization */
+        @media print {
+            body {
+                padding: 0;
+                max-width: 100%;
+            }
+
+            h1,
+            h2,
+            h3 {
+                page-break-after: avoid;
+            }
+
+            table,
+            img {
+                page-break-inside: avoid;
+            }
+
+            .diagram-container {
+                border: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header-info">
+        <p>Tana Market Project Documentation</p>
+        <p>Generated: January 2026</p>
+    </div>
+
+    <h1>System Design Document: Tana Market</h1>
+
+    <h2>1. System Purpose and Design Goals</h2>
+
+    <h3>Purpose</h3>
+    <p>
+        Tana Market is a comprehensive full-stack e-commerce platform designed to facilitate seamless online trading.
+        It serves three distinct user groups: <strong>Customers</strong>, who browse and purchase products;
+        <strong>Managers</strong>, who oversee product listings and order processing; and
+        <strong>Administrators</strong>, who have full system control including user management.
+    </p>
+
+    <h3>Design Goals</h3>
+
+    <h4>Performance</h4>
+    <ul>
+        <li><strong>Frontend:</strong> Utilizes <strong>React</strong> with <strong>Vite</strong> to ensure ultra-fast
+            load times and a responsive Single Page Application (SPA) experience.</li>
+        <li><strong>Backend:</strong> Built on <strong>Node.js</strong> and <strong>Express</strong>, providing an
+            asynchronous, event-driven architecture capable of handling high concurrent requests efficiently.</li>
+        <li><strong>Database:</strong> Uses <strong>MongoDB</strong>, a NoSQL database, optimized for flexible data
+            schemas and high-speed read/write operations for product catalogs and user sessions.</li>
+    </ul>
+
+    <h4>Dependability</h4>
+    <ul>
+        <li><strong>Reliability:</strong> Implements standard JWT-based authentication to secure session states.</li>
+        <li><strong>Transactional Integrity:</strong> Critical flows like Order Creation and Payment Verification use
+            transactional logic (e.g., verifying stock before confirming orders) to ensure data consistency.</li>
+        <li><strong>Error Handling:</strong> Centralized error handling in the backend ensures system stability even
+            when individual requests fail.</li>
+    </ul>
+
+    <h4>End User Experience</h4>
+    <ul>
+        <li><strong>Responsiveness:</strong> The UI is built with a mobile-first approach, ensuring functionality across
+            desktops, tablets, and mobile devices.</li>
+        <li><strong>Usability:</strong> Distinct layouts for different roles (Admin Dashboard vs. Customer Storefront)
+            provide tailored experiences that reduce cognitive load.</li>
+        <li><strong>Feedback:</strong> Real-time feedback via toast notifications and loading states keeps users
+            informed of system status.</li>
+    </ul>
+
+    <hr>
+
+    <h2>3.1 Architectural Design</h2>
+
+    <h3>3.1.1 Component Modeling</h3>
+    <p>The system is composed of highly decoupled modular components.</p>
+    <ul>
+        <li><strong>Frontend (React):</strong> Auth Module, Product Module, Order Module, Navigation.</li>
+        <li><strong>Backend (Express):</strong> Controllers, Routes, Middleware, Services.</li>
+    </ul>
+
+    <h3>3.1.2 Deployment Modeling</h3>
+    <p>Deployment of artifacts on hardware nodes:</p>
+    <ul>
+        <li><strong>Client Node:</strong> User's Device running React SPA via HTTPS.</li>
+        <li><strong>App Server Node:</strong> Node.js Server running Express API.</li>
+        <li><strong>Database Node:</strong> MongoDB Atlas/Server.</li>
+    </ul>
+
+    <hr>
+
+    <h2>3.2 Detailed Design</h2>
+
+    <h3>3.2.1 Design Class Model (UML Class Diagram)</h3>
+    <p>
+        The Design Class Model represents the core business entities of the Tana Market system, including their
+        attributes, data types,
+        methods, access visibility, relationships, multiplicity, and roles.
+    </p>
+
+    <div class="diagram-container">
+        <img src="docs/class_diagram.png" alt="UML Class Diagram">
+        <span class="figure-caption">Figure 3.2.1: Design Class Model</span>
+    </div>
+
+    <h4>Key Points</h4>
+    <ul>
+        <li><strong>Encapsulation:</strong> All attributes are private (<code>-</code>).</li>
+        <li><strong>Logic:</strong> Public methods (<code>+</code>) handle business logic.</li>
+        <li><strong>Relationships:</strong> Roles defined by associations (e.g., User places Order).</li>
+    </ul>
+
+    <h3>3.2.2 Persistent Model (MongoDB)</h3>
+    <p>
+        Since Tana Market uses MongoDB (NoSQL, object-based storage), persistence models map directly to domain classes.
+        Relationships are maintained via ObjectIds (Foreign Keys).
+    </p>
+
+    <div class="diagram-container">
+        <img src="docs/persistence_diagram.png" alt="Persistent Model Diagram">
+        <span class="figure-caption">Figure 3.2.2: Persistence Model (Entity-Relationship)</span>
+    </div>
+
+    <h4>Collection Definitions</h4>
+
+    <h5>Users Collection</h5>
+    <table>
+        <tr>
+            <th>Attribute</th>
+            <th>Type</th>
+            <th>Key</th>
+            <th>Required</th>
+        </tr>
+        <tr>
+            <td>_id</td>
+            <td>ObjectId</td>
+            <td>PK</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td>name</td>
+            <td>String</td>
+            <td>-</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td>email</td>
+            <td>String</td>
+            <td>Unique</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td>password</td>
+            <td>String</td>
+            <td>-</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td>role</td>
+            <td>String</td>
+            <td>-</td>
+            <td>Yes (default: customer)</td>
+        </tr>
+    </table>
+
+    <h5>Products Collection</h5>
+    <table>
+        <tr>
+            <th>Attribute</th>
+            <th>Type</th>
+            <th>Key</th>
+            <th>Required</th>
+        </tr>
+        <tr>
+            <td>_id</td>
+            <td>ObjectId</td>
+            <td>PK</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td>name</td>
+            <td>String</td>
+            <td>Index</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td>price</td>
+            <td>Number</td>
+            <td>-</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td>stock</td>
+            <td>Number</td>
+            <td>-</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td>category</td>
+            <td>String</td>
+            <td>Index</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td>isActive</td>
+            <td>Boolean</td>
+            <td>-</td>
+            <td>Yes</td>
+        </tr>
+    </table>
+
+    <h5>Orders Collection</h5>
+    <table>
+        <tr>
+            <th>Attribute</th>
+            <th>Type</th>
+            <th>Key</th>
+            <th>Details</th>
+        </tr>
+        <tr>
+            <td>_id</td>
+            <td>ObjectId</td>
+            <td>PK</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>user</td>
+            <td>ObjectId</td>
+            <td>FK → users</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>status</td>
+            <td>String</td>
+            <td>-</td>
+            <td>pending, paid, shipped...</td>
+        </tr>
+        <tr>
+            <td>trackingNumber</td>
+            <td>String</td>
+            <td>Unique</td>
+            <td>Format: TANA-YYYYMMDD-XXXX</td>
+        </tr>
+        <tr>
+            <td>items</td>
+            <td>Array</td>
+            <td>Embedded</td>
+            <td>Contains product ID and quantity</td>
+        </tr>
+    </table>
+
+    <hr>
+
+    <h2>3.3 User Interface Design</h2>
+    <p>
+        <strong>Implementation Tool:</strong> React.js (Vite)<br>
+        <strong>Architecture:</strong> Component-Based, Mobile-First
+    </p>
+
+    <div class="diagram-container">
+        <img src="docs/ui_diagram.png" alt="User Interface Flow">
+        <span class="figure-caption">Figure 3.3: User Interface Flow</span>
+    </div>
+
+    <h4>Main UI Screens</h4>
+    <ul>
+        <li><strong>Customer Interface:</strong> Home Page, Product Search, Cart & Checkout, Order History.</li>
+        <li><strong>Admin/Manager Dashboard:</strong> Product Management, Order Management, Sales Analytics.</li>
+    </ul>
+
+    <hr>
+
+    <h2>3.4 Access Control and Security Design</h2>
+
+    <h3>Role-Based Access Control (RBAC)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Admin</th>
+                <th>Manager</th>
+                <th>Customer</th>
+                <th>Guest</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Browse Products</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>✅</td>
+            </tr>
+            <tr>
+                <td>Search Products</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>✅</td>
+            </tr>
+            <tr>
+                <td>Add to Cart</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>❌</td>
+            </tr>
+            <tr>
+                <td>Place Order</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>❌</td>
+            </tr>
+            <tr>
+                <td>View Own Orders</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>❌</td>
+            </tr>
+            <tr>
+                <td>Rate Products</td>
+                <td>❌</td>
+                <td>❌</td>
+                <td>✅</td>
+                <td>❌</td>
+            </tr>
+            <tr>
+                <td>Manage Products</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>❌</td>
+                <td>❌</td>
+            </tr>
+            <tr>
+                <td>Manage Orders</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>❌</td>
+                <td>❌</td>
+            </tr>
+            <tr>
+                <td>Manage Users</td>
+                <td>✅</td>
+                <td>❌</td>
+                <td>❌</td>
+                <td>❌</td>
+            </tr>
+            <tr>
+                <td>View Analytics</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>❌</td>
+                <td>❌</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Security Mechanisms</h3>
+    <ul>
+        <li><strong>Authentication:</strong> JSON Web Tokens (JWT) signed with a secure secret.</li>
+        <li><strong>Authorization:</strong> Role-based middleware restricts access to sensitive routes.</li>
+        <li><strong>Data Protection:</strong> Bcrypt hashing for passwords.</li>
+        <li><strong>Validation:</strong> Input sanitation middleware prevents injection attacks.</li>
+        <li><strong>Network:</strong> CORS restricted to trusted domains; Helmet middleware for secure headers.</li>
+    </ul>
+
+</body>
+
+</html>
